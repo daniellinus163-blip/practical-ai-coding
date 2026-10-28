@@ -1,0 +1,19 @@
+---
+description: Strict free-tier AI and paid-service rules (Gemini only)
+alwaysApply: true
+---
+
+# Strict API cost requirement
+
+Do not use the OpenAI API or any paid AI API. Google Gemini is the only allowed AI provider for the assistant, on a free-tier-eligible model.
+
+- Use `GEMINI_API_KEY` only. Never add `OPENAI_API_KEY` or OpenAI SDKs.
+- Do not install, import, configure, or call OpenAI.
+- Do not add paid AI providers as automatic fallbacks.
+- Do not enable paid billing or incur API charges without explicit user permission.
+- If Gemini hits free limits or is down: helpful message or non-AI fallback. The rest of the app must keep working.
+- Before implementing the assistant, verify the chosen Gemini model’s current free-tier eligibility and limits.
+- Prefer free tools and service tiers. Label anything that might cost money.
+- Never assume a service is free or turn on a paid plan without approval.
+
+Before adding any external service, state: free option (yes/no), limits, and whether payment may be required. Ask for approval before any paid dependency.
