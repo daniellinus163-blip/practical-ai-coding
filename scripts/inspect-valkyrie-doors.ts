@@ -1,18 +1,29 @@
 import fs from "node:fs";
 import { Box3, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { rigMovingPanels } from "../src/configurator/moving-panels.ts";
-import { alignNoseToPositiveZ } from "../src/configurator/vehicle-facing.ts";
+import { rigMovingPanels } from "../src/configurator/moving-panels";
+import { alignNoseToPositiveZ } from "../src/configurator/vehicle-facing";
 
-const g = globalThis as typeof globalThis & { self?: typeof globalThis; document?: object };
-g.self = globalThis;
-g.document = {
-  createElementNS: () => ({
-    width: 0,
-    height: 0,
-    getContext: () => null,
-  }),
+const g = globalThis as unknown as {
+  self: typeof globalThis;
+  document: Document;
 };
+
+g.self = globalThis;
+
+g.document = {
+  createElementNS: (_namespace: string, tagName: string) => {
+    if (tagName === "canvas") {
+      return {
+        width: 0,
+        height: 0,
+        getContext: () => null,
+      } as unknown as SVGElement;
+    }
+
+    return {} as SVGElement;
+  },
+} as unknown as Document;
 if (!globalThis.URL.createObjectURL) {
   globalThis.URL.createObjectURL = () => "blob:node";
 }

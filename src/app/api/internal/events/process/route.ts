@@ -2,7 +2,6 @@ import { loadIntegrationConfig } from "@/events/config";
 import { runEventWorker } from "@/events/run";
 import { handleWorkerRequest } from "@/events/worker-http";
 
-export const dynamic = "force-dynamic";
 
 function handle(request: Request) {
   const config = loadIntegrationConfig();
