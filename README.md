@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FormShift AI
 
-## Getting Started
+Independent automotive discovery and configuration. This is **not** an official manufacturer website or dealership. An inquiry is not an order.
 
-First, run the development server:
+## Phase 2 — catalog
+
+The public catalog is driven by structured local seed data in `src/catalog/seed/`. Cards, filters, sorting, and comparison read that shape only. Adding a brand or model means adding a record, not rewriting UI.
+
+Initial vehicles:
+
+- Tesla Model 3 (production)
+- Tesla Roadster (labelled **upcoming / planned**)
+- Bugatti Chiron (production ended)
+- Lamborghini Revuelto (production)
+
+Facts are labelled **confirmed**, **announced**, or **unavailable**. Prices are not listed. Manufacturer photography is not bundled; placeholders are used until approved assets exist.
+
+Catalog pages still read local seed data in `src/catalog/seed/`. Auth, saved builds, inquiries, and staff leads are implemented against Supabase. Follow `supabase/SETUP.md`. **Free option: yes.** Do not create a paid project without approval. The database is not live until you add keys and run the migration.
+
+## Setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Main routes: `/`, `/discover`, `/compare`, `/cars/[slug]`, `/my-builds`, `/about`, `/login`, `/register`, `/account`, `/staff`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Phase 3 — 3D studio
 
-## Learn More
+The vehicle page includes an interactive Three.js / React Three Fiber viewer (orbit, zoom, camera presets, reset, fullscreen, lights, loading and error states).
 
-To learn more about Next.js, take a look at the following resources:
+**No car models are included.** Place a licensed `.glb` at:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`public/models/<vehicle-slug>/vehicle.glb`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See `src/configurator/MODEL-MANIFEST.md` for licence notes and candidate sources. Customization is off until the loaded file is inspected and real mesh/material names are listed in `src/configurator/manifest.ts`. Wheels or interior will not be faked by recoloring the whole body.
 
-## Deploy on Vercel
+The Tesla Roadster remains an upcoming/planned catalog entry. Any 3D file for it is a labelled reference preview, not an official production Tesla model.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Cost rules
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Gemini is the only allowed AI provider later (`GEMINI_API_KEY`). Do not add OpenAI or other paid AI APIs. Phase 2 does not call any AI API.
+
+Supabase is wired in code (Free tier). n8n, HubSpot, and Resend adapters exist but stay inactive without keys. Each has a free or hobby option and paid upgrades. Ask before enabling billing. See `supabase/EVENTS.md`.

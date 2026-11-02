@@ -1,69 +1,110 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Suspense } from "react";
+import { VehicleCard } from "@/components/catalog/vehicle-card";
+import { HomeMotion } from "@/components/home/home-motion";
+import { StudioTeaser } from "@/components/home/studio-teaser";
+import { catalogRepository } from "@/catalog/local-repository";
 
-export default function Home() {
+export default async function Home() {
+  const vehicles = await catalogRepository.listVehicles();
+  const brands = await catalogRepository.listBrands();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <HomeMotion>
+      <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:py-20">
+        <div>
+          <p data-hero="kicker" className="text-[11px] uppercase tracking-[0.32em] text-[var(--accent)]">
+            FormShift AI · independent catalog
+          </p>
+          <h1 data-hero="title" className="font-display mt-4 text-5xl leading-tight text-[var(--ink)] md:text-6xl">
+            Specify the machine. Keep the facts honest.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+          <p data-hero="copy" className="mt-5 max-w-xl text-lg text-[var(--ink)]">
+            Thirteen 3D cars from your library, including Jesko Absolut, Huayra, Valkyrie, AMG ONE,
+            and Maybach S-Class and GLS, in an interactive studio. Not a dealer. Not an official
+            manufacturer site.
+          </p>
+          <div data-hero="cta" className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/discover"
+              className="on-dark bg-[var(--ink)] px-6 py-3 text-sm transition hover:bg-[var(--accent)]"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              Discover cars
+            </Link>
+            <Link
+              href="/cars/bugatti-chiron#studio"
+              className="border border-[var(--ink)] bg-white px-6 py-3 text-sm text-[var(--ink)] transition hover:border-[var(--accent)]"
             >
-              Learning
-            </a>{" "}
-            center.
+              Open Chiron studio
+            </Link>
+          </div>
+        </div>
+        <div data-hero="stage">
+          <StudioTeaser />
+          <p className="mt-2 text-xs text-[var(--ink)]">
+            Homepage stays light until you load the 3D preview. Full cars open on their own pages.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="bg-[var(--bg-2)] px-4 py-16">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--accent)]">Brands</p>
+          <h2 className="font-display mt-2 text-4xl text-[var(--ink)]">Filter the catalog by marque</h2>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {brands.map((brand) => (
+              <Link
+                key={brand.id}
+                data-reveal
+                href={`/discover?brand=${brand.slug}`}
+                className="border border-[var(--line)] bg-[var(--card)] p-6 transition hover:-translate-y-0.5 hover:border-[var(--accent)]"
+              >
+                <p className="font-display text-2xl text-[var(--ink)]">{brand.name}</p>
+                <p className="mt-2 text-sm text-[var(--ink)]">View vehicles →</p>
+              </Link>
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-16">
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--muted)]">Featured</p>
+            <h2 className="font-display text-4xl text-[var(--ink)]">Initial collection</h2>
+          </div>
+          <Link href="/discover" className="text-sm text-[var(--accent)]">
+            View all
+          </Link>
+        </div>
+        <Suspense>
+          <div className="grid gap-6 md:grid-cols-2">
+            {vehicles.map((vehicle) => (
+              <div key={vehicle.id} data-reveal>
+                <VehicleCard vehicle={vehicle} compareSlugs={[]} />
+              </div>
+            ))}
+          </div>
+        </Suspense>
+      </section>
+
+      <section data-reveal className="border-t border-[var(--line)] bg-[var(--hero)] px-4 py-16 text-[var(--hero-text)]">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+          <div>
+            <h2 className="font-display text-4xl text-[var(--hero-text)]">Compare labelled facts side by side</h2>
+            <p className="mt-3 max-w-xl text-[var(--hero-text)]">
+              Unavailable numbers stay blank. The Roadster is marked upcoming. An inquiry is not an
+              order.
+            </p>
+          </div>
+          <Link
+            href="/discover"
+            className="bg-white px-6 py-3 text-sm text-[var(--ink)] hover:bg-[var(--accent)] hover:text-[var(--hero-text)]"
+          >
+            Start with Discover
+          </Link>
+        </div>
+      </section>
+    </HomeMotion>
   );
 }

@@ -1,0 +1,1057 @@
+# FORMSHIFT AI — COMPLETE MASTER IMPLEMENTATION SPECIFICATION
+
+## 1. PROJECT OVERVIEW
+
+Project name: FormShift AI
+
+Project type: Premium multi-brand automotive discovery, 3D vehicle customization, customer inquiry management, and CRM automation platform.
+
+Primary objective: Build a polished, interactive automotive web application where users can explore different car brands, inspect vehicle details, customize supported vehicle features in 3D, save their configurations, and submit inquiries. The business team will manage those inquiries through an internal CRM supported by reliable workflow automation.
+
+The application should demonstrate advanced frontend engineering, interactive 3D rendering, database design, authentication, secure APIs, CRM development, AI integration, automation workflows, and production deployment.
+
+This is an independent automotive configurator concept, not an official manufacturer website, dealership, or vehicle-ordering service.
+
+The system must distinguish between:
+- Verified vehicle specifications.
+- Illustrative or estimated prices.
+- User-selected configurations.
+- Actual customer inquiries.
+- Internal sales opportunities.
+- Completed sales, which must never be fabricated.
+
+Do not imply an official relationship with Tesla, Bugatti, Lamborghini, or any other manufacturer without authorization.
+
+## 2. CORE PRODUCT VISION
+
+FormShift AI has two main experiences.
+
+### A. Customer-facing automotive experience
+
+Visitors can:
+- Explore supported car brands.
+- Browse available vehicles.
+- Search and filter the catalog.
+- View vehicle specifications and gallery images.
+- Open an interactive 3D configurator.
+- Customize supported exterior paint, wheels, trim, and accessories.
+- View a summary of their selected options.
+- See indicative pricing when reliable pricing data is available.
+- Save and restore configurations.
+- Compare vehicles using available specifications.
+- Ask an AI assistant for recommendations.
+- Submit a vehicle inquiry with their chosen configuration.
+- Receive a confirmation when the inquiry is successfully saved.
+
+### B. Internal business and CRM experience
+
+Authorized staff can:
+- View inquiries submitted by customers.
+- Manage contact records and leads.
+- Review the selected vehicle and configuration.
+- Assign leads to salespeople.
+- Create and manage sales opportunities.
+- Update pipeline stages.
+- Record notes and activities.
+- Schedule follow-up tasks.
+- Monitor customer communications.
+- View automation execution history.
+- Investigate failed integrations and retry eligible operations.
+- Review dashboard metrics calculated from real database data.
+
+The customer experience and the internal CRM must be integrated through a consistent data model.
+
+## 3. TARGET BRANDS AND VEHICLE CATALOG
+
+The initial catalog should support these brands:
+
+- Tesla
+- Bugatti
+- Lamborghini
+
+The architecture must allow additional brands such as Porsche, Ferrari, McLaren, Mercedes-Benz, BMW, Audi, and other manufacturers to be added without rebuilding the configurator.
+
+Begin with three approved 3D assets:
+- One Tesla vehicle.
+- One Bugatti vehicle.
+- One Lamborghini vehicle.
+
+Suggested initial examples are Tesla Model 3, Bugatti Chiron, and Lamborghini Revuelto. Confirm the selected models and available asset licenses before adding them to the live catalog.
+
+Do not assume every model year, trim, or regional variant is available. Store each supported variant explicitly.
+
+### Catalog hierarchy
+
+Use a structure similar to:
+
+Brand → Vehicle model → Model year or variant → Supported configuration options.
+
+A vehicle record should contain:
+- Brand reference.
+- Model name.
+- Model year or variant identifier where known.
+- Slug and unique identifier.
+- Short description and detailed description.
+- Vehicle category.
+- Exterior images and gallery.
+- 3D model asset reference.
+- Published specifications and their sources.
+- Available configuration options.
+- Indicative price information, if supported by reliable data.
+- Catalog publication status.
+- Asset license and attribution metadata where applicable.
+
+Do not copy manufacturer specifications or pricing without checking their accuracy, date, market, and permitted use.
+
+## 4. TECHNOLOGY STACK
+
+Use the following stack unless repository inspection reveals a genuine compatibility issue.
+
+Frontend and application:
+- Next.js App Router.
+- React.
+- TypeScript with strict type checking.
+- Tailwind CSS.
+- shadcn/ui for appropriate reusable interface components.
+- React Three Fiber and Three.js for interactive 3D.
+- GSAP for selected animations.
+- A charting library only where real dashboard metrics benefit from visualization.
+
+Backend and data:
+- Supabase PostgreSQL.
+- Supabase Auth.
+- Supabase Storage when appropriate.
+- Supabase Row Level Security.
+- Server-side Next.js handlers and server-only modules.
+
+CRM and automation:
+- An internal CRM built in the application.
+- n8n for external workflow orchestration.
+- HubSpot for external contact and deal synchronization.
+- Resend for transactional email.
+
+AI:
+- OpenAI API accessed exclusively through server-side code.
+
+Development and deployment:
+- Git and GitHub.
+- Cursor as the primary coding environment.
+- Vercel for hosting, with production runtime requirements verified before deployment.
+
+Do not introduce additional services without a specific requirement. Avoid unnecessary dependencies and architectural complexity.
+
+## 5. VISUAL DESIGN AND BRAND IDENTITY
+
+Create a distinctive premium automotive visual identity.
+
+The site should feel like a combination of a luxury automotive editorial experience and an advanced digital product studio.
+
+### Customer-facing aesthetic
+
+Use:
+- Large, high-quality vehicle imagery.
+- Strong typography and restrained color choices.
+- Dark, cinematic sections balanced with light, editorial product layouts.
+- Carefully composed hero sections.
+- Spacious vehicle cards.
+- High-quality detail galleries.
+- Smooth, meaningful transitions.
+- Clear navigation and calls to action.
+- Carefully designed option selectors.
+- Polished loading and model-transition states.
+
+The website must not look like a generic admin template repurposed for cars.
+
+Avoid:
+- Excessive glassmorphism.
+- Unnecessary neon colors.
+- Excessive animated backgrounds.
+- Overcrowded cards.
+- Tiny unreadable text.
+- Animations that delay access to essential content.
+- Fake buttons or interactions that only look functional.
+
+### CRM aesthetic
+
+The CRM should have a separate but consistent professional visual language.
+
+Use:
+- Clear sidebar navigation.
+- Readable data tables.
+- Search and filtering controls.
+- Status badges.
+- Well-organized record detail pages.
+- Useful empty states.
+- Loading skeletons.
+- Confirmation dialogs.
+- Charts based on actual data.
+- Clear error messages and retry controls.
+
+Use shared design tokens and reusable components across both experiences.
+
+### Accessibility and responsiveness
+
+Support:
+- Mobile, tablet, laptop, and desktop layouts.
+- Keyboard navigation.
+- Visible focus indicators.
+- Appropriate contrast.
+- Accessible form labels and validation.
+- Reduced-motion preferences.
+- Useful fallbacks when WebGL is unavailable.
+- Touch-friendly 3D controls.
+
+Do not make essential information accessible only through animation or 3D rendering.
+
+## 6. REQUIRED APPLICATION ROUTES
+
+### Public routes
+
+- `/` — landing page.
+- `/brands` — supported brand catalog.
+- `/brands/[slug]` — brand details and vehicles.
+- `/vehicles` — vehicle discovery, search, and filters.
+- `/vehicles/[slug]` — vehicle details and specifications.
+- `/configure/[vehicleId]` — interactive 3D configurator.
+- `/compare` — comparison of supported vehicles.
+- `/saved-builds` — saved configurations.
+- `/assistant` — AI automotive assistant.
+- `/request-inquiry` — customer inquiry form.
+- `/login` — authentication.
+
+Create additional routes only when justified by the application requirements.
+
+### Protected business routes
+
+- `/dashboard` — CRM overview.
+- `/dashboard/contacts` — contact management.
+- `/dashboard/leads` — lead management.
+- `/dashboard/inquiries` — customer inquiry management.
+- `/dashboard/deals` — sales opportunities and pipeline.
+- `/dashboard/tasks` — follow-up tasks.
+- `/dashboard/activities` — sales activities and internal notes.
+- `/dashboard/automations` — automation execution history.
+- `/dashboard/integrations` — integration status.
+- `/dashboard/settings` — user, team, and business settings.
+
+Protect private routes with server-side authorization. Do not rely on hiding navigation links to secure records.
+
+## 7. HOMEPAGE REQUIREMENTS
+
+The homepage should immediately communicate the product's purpose.
+
+Include:
+1. A premium automotive hero section.
+2. A clear headline about exploring and configuring vehicles.
+3. A primary call to action to explore vehicles.
+4. A secondary call to action to launch the configurator.
+5. Featured vehicles.
+6. Brand navigation.
+7. An explanation of the 3D customization experience.
+8. A section highlighting configuration features.
+9. A preview of the AI assistant.
+10. A section explaining how vehicle inquiries work.
+11. A final call to action.
+12. A professional footer with appropriate disclaimers.
+
+Use genuine, properly licensed imagery and real catalog records when available. Development placeholders must be clearly separated from production content.
+
+Do not use official manufacturer logos or imply manufacturer endorsement without appropriate permission.
+
+## 8. VEHICLE CATALOG REQUIREMENTS
+
+Create a reusable vehicle catalog interface.
+
+Users should be able to:
+- Browse all published vehicles.
+- Filter by brand.
+- Filter by vehicle category.
+- Search by brand or model.
+- Sort by available catalog fields.
+- Open a vehicle detail page.
+- View available specifications.
+- See which vehicles have a functioning 3D configurator.
+- See which customization options are supported.
+- Start configuring a selected vehicle.
+
+The interface must handle missing information gracefully.
+
+Do not display unsupported specifications, fabricated availability, invented prices, or false claims about vehicle features.
+
+Use clear distinctions between:
+- Published vehicle information.
+- Development-only vehicles.
+- Vehicles with approved 3D assets.
+- Vehicles whose configurations are not yet supported.
+
+## 9. 3D CONFIGURATOR REQUIREMENTS
+
+This is one of the most important features of the project.
+
+Use React Three Fiber and Three.js.
+
+### 3D viewer
+
+Implement:
+- GLB/glTF loading.
+- Appropriate camera positioning.
+- Orbit controls.
+- Zoom controls.
+- Camera presets where useful.
+- Model loading indicators.
+- Rendering error boundaries.
+- Graceful asset-not-found handling.
+- Responsive sizing.
+- Lazy loading.
+- Reasonable memory management.
+- Proper disposal of resources where required.
+- A non-WebGL fallback.
+
+Do not load every vehicle's 3D model simultaneously. Load only the active vehicle and the assets required for its current view.
+
+### Model asset requirements
+
+For every vehicle, document:
+- Asset path.
+- File format.
+- File size.
+- License and source.
+- Creator attribution.
+- Mesh names.
+- Material names.
+- Editable parts.
+- Texture dependencies.
+- Known limitations.
+- Supported configuration features.
+
+Prefer GLB files containing the required textures and materials, where practical.
+
+Do not assume that a vehicle model has separate meshes for its wheels, body panels, windows, lights, interior, or trim. Inspect the actual model.
+
+If a model has one combined body mesh, do not claim individual body panels can be independently customized unless that capability is implemented.
+
+### Supported configuration options
+
+The architecture should support:
+- Exterior paint.
+- Wheel style.
+- Wheel finish.
+- Trim color.
+- Interior materials, if the model supports them.
+- Optional accessories, if modeled.
+- Other model-specific options.
+
+Each vehicle may expose a different set of options.
+
+Do not show an option as functional if the current model cannot implement it.
+
+### Configuration interaction
+
+When the user changes an option:
+1. Update the selected configuration state.
+2. Apply the corresponding visual change to the 3D model when supported.
+3. Update the build summary.
+4. Update the indicative price if the option has a valid price adjustment.
+5. Preserve the selection when switching supported views.
+6. Allow the user to reset or save the configuration.
+
+The 3D renderer must not become the source of truth for prices or permissions.
+
+## 10. PRICE AND CONFIGURATION RULES
+
+Use a consistent configuration schema.
+
+A configuration should contain:
+- Vehicle ID.
+- Model year or variant ID, where applicable.
+- Selected option IDs.
+- Selected option values.
+- Configuration snapshot.
+- Applicable currency.
+- Base price, if reliable.
+- Option price adjustments, if reliable.
+- Calculated indicative total, if available.
+- Creation and update timestamps.
+
+Use integer minor units for monetary calculations where appropriate.
+
+Never trust prices submitted by the browser. The server must retrieve authoritative product and option data, validate the selections, and calculate the accepted value.
+
+If reliable pricing is unavailable, allow users to configure the vehicle and request an inquiry without presenting a fabricated total.
+
+Clearly label illustrative demo prices as illustrative. Do not imply that the application represents an official manufacturer quote or an available vehicle order.
+
+## 11. DATABASE DESIGN
+
+Create version-controlled SQL migrations and typed database access.
+
+Recommended tables:
+
+### Core application
+- `profiles`
+- `team_memberships`
+
+### Automotive catalog
+- `brands`
+- `vehicles`
+- `vehicle_model_years`
+- `vehicle_options`
+- `vehicle_option_groups`
+- `vehicle_assets`
+
+### Configurations
+- `configurations`
+- `configuration_items`
+
+### CRM
+- `contacts`
+- `leads`
+- `inquiries`
+- `deals`
+- `activities`
+- `tasks`
+
+### Automation and audit
+- `automation_events`
+- `integration_syncs`
+- `audit_logs`
+
+Define the relationships explicitly.
+
+Examples:
+- A brand can have multiple vehicles.
+- A vehicle can have multiple model years or variants.
+- A vehicle can have multiple supported options.
+- A configuration belongs to a vehicle and records selected options.
+- An inquiry can reference a configuration and a contact.
+- A lead can be assigned to an authorized salesperson.
+- A deal can be associated with a lead and contact.
+- An activity or task can reference the relevant CRM records.
+- An automation event references the business action that triggered it.
+- An integration sync records the external record and sync result.
+
+Use foreign keys, constraints, indexes, unique keys and timestamps as appropriate.
+
+Do not store every relationship in unvalidated JSON. Use relational tables where relationships need to be queried or enforced, and use JSON snapshots where preserving a historical configuration is appropriate.
+
+A configuration snapshot should preserve the selected vehicle and options as they were when the inquiry was submitted, even if the catalog changes later.
+
+## 12. AUTHENTICATION AND AUTHORIZATION
+
+Use Supabase Auth.
+
+Define these roles:
+- Admin.
+- Sales manager.
+- Salesperson.
+
+Document and enforce permissions.
+
+Admin:
+- Manage approved catalog records and team settings.
+- Manage users and role assignments through authorized operations.
+- Access permitted CRM and integration administration functions.
+
+Sales manager:
+- Access the sales pipeline and team work within the defined policy.
+- Assign leads where permitted.
+- Review sales activities and team performance.
+
+Salesperson:
+- Access assigned leads and associated records, subject to the established policy.
+- Update permitted lead and deal statuses.
+- Manage authorized follow-up tasks and activities.
+
+Enforce authorization on the server and through appropriate Supabase Row Level Security policies.
+
+Do not expose internal CRM records to anonymous visitors.
+
+Do not allow a user to grant themselves administrative permissions by editing a browser request or profile field.
+
+Keep privileged database credentials server-side.
+
+Add audit logging for important permission changes and sensitive CRM actions.
+
+## 13. CUSTOMER INQUIRY WORKFLOW
+
+The customer inquiry form should collect only information needed to process the request.
+
+Suggested fields:
+- Name.
+- Email.
+- Phone, if needed.
+- Country or market, if relevant.
+- Selected vehicle and variant.
+- Selected configuration.
+- Intended purchase timeframe.
+- Optional message.
+- Relevant consent fields.
+
+When a customer submits an inquiry:
+
+1. Validate the submitted fields.
+2. Retrieve the vehicle and option data from the trusted database.
+3. Validate option compatibility.
+4. Calculate any valid indicative total server-side.
+5. Save the configuration snapshot.
+6. Associate the contact or create a contact using a defined matching strategy.
+7. Create the inquiry and related lead.
+8. Create a durable automation event.
+9. Return a confirmation after the inquiry has actually been persisted.
+10. Allow the customer to see a clear confirmation or reference.
+
+Do not require external CRM synchronization or email delivery to succeed before preserving the original inquiry.
+
+If an integration fails, the inquiry must remain available in the internal CRM.
+
+Use idempotency to prevent accidental duplicate inquiries from repeated submissions.
+
+## 14. INTERNAL CRM REQUIREMENTS
+
+### Contacts
+
+Implement:
+- Contact list.
+- Search and filters.
+- Contact detail page.
+- Contact information and communication preferences.
+- Related inquiries.
+- Related configurations.
+- Related deals.
+- Activities and notes.
+
+### Leads
+
+Implement:
+- Lead source.
+- Lead status.
+- Lead owner.
+- Priority.
+- Qualification information.
+- Related vehicle inquiry.
+- Last activity.
+- Next follow-up.
+
+### Inquiries
+
+Implement:
+- Inquiry reference.
+- Contact information subject to authorization.
+- Selected vehicle and model year.
+- Configuration snapshot.
+- Submitted date.
+- Inquiry status.
+- Assigned salesperson.
+- Internal notes.
+- Related activities.
+
+### Deals
+
+Implement:
+- Deal name.
+- Related contact.
+- Related lead and inquiry.
+- Vehicle of interest.
+- Estimated opportunity value.
+- Currency.
+- Sales owner.
+- Pipeline stage.
+- Expected decision date.
+- Won or lost status.
+- Relevant notes and history.
+
+A deal is a sales opportunity, not proof that a vehicle was purchased.
+
+### Tasks and activities
+
+Implement:
+- Follow-up tasks.
+- Due dates.
+- Assigned user.
+- Completion status.
+- Call or meeting notes where relevant.
+- Internal comments.
+- Activity timestamps.
+- Related CRM record references.
+
+### Dashboard
+
+Use real database-backed metrics:
+- New inquiries.
+- Leads by stage.
+- Open opportunities.
+- Follow-up tasks due.
+- Recently updated inquiries.
+- Integration failures requiring attention.
+
+Do not display fabricated revenue, completed sales or conversion statistics.
+
+Provide empty states when there is insufficient data.
+
+## 15. AUTOMATION EVENT ENGINE
+
+Build a durable automation mechanism before connecting n8n.
+
+An event should include:
+- Event ID.
+- Event type.
+- Entity reference.
+- Idempotency key.
+- Status.
+- Attempt count.
+- Creation time.
+- Processing time.
+- Next retry time.
+- Sanitized error information.
+
+Example event:
+`vehicle.inquiry.created`
+
+Use a reliable outbox or equivalent event-persistence design.
+
+The event-processing mechanism must:
+- Preserve events when external services fail.
+- Deliver eligible events to the configured integration.
+- Prevent unnecessary duplicate processing.
+- Use timeouts and safe retries.
+- Apply backoff for temporary failures.
+- Track the result of external operations.
+- Support safe manual retries.
+- Prevent unauthorized triggering of privileged operations.
+- Keep secrets out of client code and logs.
+
+A database table alone does not process events. Document how the dispatcher, worker, database-triggered mechanism or scheduler actually runs in local development and production.
+
+Do not assume that a long-running worker will remain active in a hosting environment that does not support it.
+
+## 16. N8N AUTOMATION
+
+Use n8n to orchestrate external workflow steps.
+
+Initial workflow:
+
+1. Receive a secured vehicle inquiry event.
+2. Validate the event payload.
+3. Retrieve or verify the inquiry details.
+4. Synchronize the appropriate contact and deal in HubSpot.
+5. Send transactional notifications through Resend.
+6. Record the outcome of each operation.
+7. Return or persist a clear processing result.
+
+Additional workflows can later support:
+- Lead assignment.
+- Follow-up task reminders.
+- Deal-stage notifications.
+- Internal alerts for stale leads.
+- Scheduled summaries for sales managers.
+- Recovery and alerting for repeated integration failures.
+
+Every workflow must have documented input fields, output fields, credentials and failure behavior.
+
+Use n8n's credential management for external secrets where appropriate.
+
+Do not rely on a browser-only webhook request.
+
+Do not send unnecessary customer data to external services.
+
+Do not duplicate a business operation in both application code and n8n without a clearly defined reason.
+
+## 17. HUBSPOT INTEGRATION
+
+Use HubSpot as an external CRM integration, while Supabase remains the primary data source for the FormShift AI application.
+
+Implement:
+- Contact creation or update.
+- Deal creation or update.
+- Contact/deal association.
+- Stable record matching.
+- Storage of external record IDs.
+- Sync status tracking.
+- Rate-limit handling.
+- Error reporting.
+- Safe retry behavior.
+
+Map the relevant fields, such as:
+- Contact details.
+- Inquiry source.
+- Vehicle brand.
+- Vehicle model.
+- Configuration summary.
+- Lead owner.
+- Inquiry status.
+- Estimated opportunity value, if reliable.
+
+Do not assume every custom property already exists in HubSpot. Document any property creation or configuration needed.
+
+Use supported authentication and appropriate permissions.
+
+If credentials are unavailable, show a clear configuration-required state rather than pretending synchronization succeeded.
+
+## 18. RESEND EMAIL INTEGRATION
+
+Implement transactional emails for:
+- Customer inquiry acknowledgment.
+- Internal sales notification.
+- Optional operational alerts.
+
+Email content should include a reference to the inquiry and a clear summary of the selected vehicle.
+
+Requirements:
+- Reusable email templates.
+- Validated recipient information.
+- Sender configuration.
+- Error reporting.
+- Delivery status where available.
+- Idempotent processing to avoid unnecessary duplicates.
+- Safe handling of email-provider failures.
+
+Do not send promotional messages without appropriate marketing consent.
+
+Do not expose provider credentials.
+
+Document sender-domain verification and any account setup needed.
+
+## 19. AI AUTOMOTIVE ASSISTANT
+
+Use the OpenAI API through server-side code.
+
+The assistant should:
+- Help visitors explore available vehicles.
+- Compare vehicles using supported catalog data.
+- Ask clarifying questions about preferences.
+- Recommend suitable options based on the available data.
+- Explain supported configuration options.
+- Help the user understand indicative pricing.
+- Offer to prepare an inquiry.
+
+Do not invent:
+- Current manufacturer prices.
+- Vehicle availability.
+- Specifications.
+- Delivery dates.
+- Manufacturer warranties.
+- Financing approval.
+- Official order status.
+
+The assistant should clearly identify missing information.
+
+Use structured database lookups for catalog facts. Add retrieval infrastructure only when there is a demonstrated need.
+
+The assistant must not directly perform privileged CRM mutations through unrestricted model output.
+
+Any inquiry-creation action must be validated by server-side code and confirmed by the user.
+
+Apply reasonable rate limits, input validation, usage monitoring and safe provider-error handling.
+
+Keep the API key server-side.
+
+## 20. SAVED BUILDS AND COMPARISON
+
+Implement saved configurations using authenticated database storage when available.
+
+Where appropriate, allow temporary local configurations before authentication, then offer a safe way to save them after login.
+
+The comparison feature should allow a small number of vehicles to be compared using available, consistent specification fields.
+
+Do not compare missing values as if they were equivalent.
+
+Show unavailable data clearly and avoid making unsupported claims about which vehicle is better.
+
+## 21. PERFORMANCE AND ASSET OPTIMIZATION
+
+The configurator must be optimized for realistic browser conditions.
+
+Requirements:
+- Lazy-load 3D components.
+- Load only the active vehicle model.
+- Optimize model geometry and texture sizes.
+- Use appropriate compression when compatible.
+- Avoid unnecessary rerenders.
+- Handle slow connections.
+- Provide a static image fallback.
+- Dispose of WebGL resources appropriately.
+- Test memory usage when switching vehicles.
+- Keep the CRM fast even when the 3D viewer is not loaded.
+
+Do not choose asset quality solely by the appearance of a desktop render. Test actual browser loading performance.
+
+## 22. SECURITY REQUIREMENTS
+
+Implement:
+- Server-side input validation.
+- Authorization checks for protected records.
+- Supabase RLS policies.
+- Secure environment-variable handling.
+- Rate limiting on public endpoints.
+- Appropriate webhook authentication.
+- Safe error responses.
+- Safe logging.
+- Duplicate-request protection.
+- Auditing of important business changes.
+- Least-privilege access for integrations.
+- Protection against unauthorized record access.
+- Correct handling of customer communication preferences.
+
+Never commit secrets to GitHub.
+
+Never expose service-role keys, private API keys or privileged tokens to browser code.
+
+Do not claim a security policy is effective merely because the UI hides a button.
+
+Test authorization boundaries with different roles.
+
+## 23. ERROR HANDLING AND OBSERVABILITY
+
+Every major feature should have useful loading, empty, success and error states.
+
+Examples:
+- Vehicle asset cannot load.
+- Unsupported customization option.
+- Supabase request fails.
+- Inquiry validation fails.
+- Duplicate submission is detected.
+- n8n endpoint is unavailable.
+- HubSpot rejects a request.
+- Resend fails to send a message.
+- AI provider is unavailable.
+
+Errors should be actionable and safe.
+
+Do not expose internal stack traces, tokens, private data or credentials to users.
+
+Record enough operational information to diagnose integration problems without storing unnecessary personal data.
+
+## 24. TESTING STRATEGY
+
+### Unit tests
+
+Test:
+- Configuration validation.
+- Option compatibility.
+- Price calculation.
+- Idempotency helpers.
+- Input validation.
+- Role and permission helpers.
+
+### Integration tests
+
+Test:
+- Database queries.
+- Authentication.
+- Inquiry persistence.
+- Event creation.
+- Integration response handling.
+- Failure and retry behavior.
+
+Use controlled mocks for external services during automated tests, but clearly distinguish mocked tests from real integration tests.
+
+### End-to-end tests
+
+Verify the main customer journey:
+
+1. Open the website.
+2. Select a supported vehicle.
+3. Open its 3D configurator.
+4. Change a supported option.
+5. Verify the visual and configuration summary changes.
+6. Submit a valid inquiry.
+7. Confirm the inquiry exists in Supabase.
+8. Confirm the inquiry appears in the CRM.
+9. Confirm an automation event is created.
+10. Verify n8n processes the event when configured.
+11. Verify HubSpot records and Resend emails when real credentials are configured.
+12. Verify failures are visible and recoverable.
+
+Also test unauthorized access, duplicate submissions, missing assets, invalid options, provider errors and mobile layouts.
+
+Never claim a test passed unless it was actually executed and its result was checked.
+
+## 25. MANUAL SETUP REQUIREMENTS
+
+The implementation must clearly identify where I need to take action outside Cursor.
+
+### Project setup
+
+I must:
+- Open the project workspace in Cursor.
+- Set up Git and GitHub.
+- Review and approve the implementation plan.
+
+### 3D assets
+
+I must:
+- Find and obtain appropriately licensed vehicle models.
+- Verify each model's license and source.
+- Place assets in the documented directory.
+- Confirm supported editable materials and meshes.
+
+### Supabase
+
+I must:
+- Create a Supabase project.
+- Obtain its project URL and publishable key.
+- Configure environment variables.
+- Apply or verify migrations and RLS policies.
+- Configure authentication settings as required.
+
+### n8n
+
+I must:
+- Create or access an n8n instance.
+- Configure workflow nodes and credentials.
+- Activate workflows.
+- Supply the actual configured webhook endpoint through secure settings.
+
+### HubSpot
+
+I must:
+- Create or access a HubSpot account.
+- Configure the supported authentication method and permissions.
+- Create required custom properties if necessary.
+- Supply credentials through the appropriate secure configuration.
+
+### Resend
+
+I must:
+- Create or access a Resend account.
+- Configure API credentials.
+- Verify an authorized sender or domain as required.
+- Configure the relevant environment settings.
+
+Google Gemini API (AI Assistant): Use the Google Gemini API to power the FormShift AI car assistant, helping users explore vehicles, compare specifications, and understand customization options using verified catalog data. Use a Gemini model available on the free tier where eligible
+
+### Deployment
+
+I must:
+- Connect the repository to Vercel.
+- Configure production environment variables.
+- Apply migrations safely.
+- Configure production webhooks and any required scheduler or worker.
+- Verify the live workflow.
+
+Cursor should tell me exactly when each step becomes necessary. Do not require every external account to be configured before the initial UI is built.
+
+## 26. IMPLEMENTATION PHASES
+
+Implement in this order:
+
+Phase 1: Repository inspection, project foundation, design system and public UI.
+
+Phase 2: Vehicle catalog structure, 3D assets, viewer and supported customization.
+
+Phase 3: Supabase schema, authentication, roles and security policies.
+
+Phase 4: Configuration persistence and secure customer inquiry workflow.
+
+Phase 5: Internal CRM dashboard and database-backed sales management.
+
+Phase 6: Durable automation event engine and retry handling.
+
+Phase 7: n8n workflow configuration and event delivery.
+
+Phase 8: HubSpot synchronization and Resend notifications.
+
+Phase 9: AI automotive assistant.
+
+Phase 10: Security review, testing, optimization and deployment.
+
+Each phase must have:
+- A clear objective.
+- A list of files and components to implement.
+- Required dependencies.
+- Manual tasks.
+- Acceptance criteria.
+- Tests to run.
+- A report of completed and incomplete functionality.
+
+Do not start the next phase until the current phase has been reviewed and its acceptance criteria have been verified.
+
+## 27. PROJECT STRUCTURE
+
+Propose a maintainable folder structure based on the actual repository.
+
+Separate responsibilities for:
+- App routes and layouts.
+- Shared UI components.
+- Automotive catalog features.
+- 3D configurator features.
+- Configuration and pricing logic.
+- CRM features.
+- Authentication and authorization.
+- Database types and queries.
+- Validation schemas.
+- Server-side integration modules.
+- Automation event processing.
+- AI assistant.
+- Tests and fixtures.
+- Database migrations.
+- Asset manifests and documentation.
+
+Avoid putting all logic into one large component or route file.
+
+Do not create unnecessary abstractions before they are needed.
+
+## 28. PROJECT DOCUMENTATION
+
+Maintain the following documentation as the project develops:
+
+- README.md — project overview and setup.
+- docs/architecture.md — application architecture.
+- docs/implementation-phases.md — phase progress and acceptance criteria.
+- docs/database.md — schema and relationships.
+- docs/security.md — roles, permissions and security assumptions.
+- docs/3d-assets.md — model sources, licenses and supported customizations.
+- docs/integrations.md — n8n, HubSpot, Resend and OpenAI setup.
+- docs/deployment.md — local and production deployment.
+- .env.example — variable names and placeholder values only.
+
+Never put real secrets in documentation.
+
+Keep the documentation aligned with the actual implementation.
+
+## 29. FINAL ACCEPTANCE CRITERIA
+
+The project is not complete until:
+
+- The public site is polished and responsive.
+- Multiple brands and vehicles can be represented in the catalog.
+- At least one approved 3D model loads and supports genuine visual customization.
+- Unsupported options are handled honestly.
+- Configurations can be saved and restored appropriately.
+- Indicative pricing is calculated using trusted data.
+- Customers can submit inquiries.
+- Inquiries are persisted securely.
+- The CRM displays real inquiries and related vehicle configurations.
+- Authorized staff can manage leads, deals, tasks and activities.
+- Automation events are durable and recoverable.
+- n8n can process a configured inquiry workflow.
+- HubSpot synchronization works with valid credentials.
+- Resend sends the expected transactional notifications.
+- The AI assistant uses real catalog data.
+- Permissions are enforced server-side and through RLS.
+- Automated tests and production builds have been run.
+- Deployment configuration is documented and verified.
+- Remaining limitations and manual tasks are clearly reported.
+
+## 30. FIRST ACTION — DO NOT CODE YET
+
+Before implementing anything:
+
+1. Inspect the current repository and identify existing code, dependencies and configuration.
+2. Explain whether the workspace is empty or already contains a project.
+3. Propose the folder structure and route architecture.
+4. Explain the database relationships.
+5. Describe the 3D asset pipeline and how vehicle-specific materials will be mapped.
+6. Describe the security and authorization architecture.
+7. Explain how the CRM and automation events will work.
+8. List external accounts, credentials and 3D assets that will be required at each phase.
+9. Provide a phase-by-phase implementation checklist.
+10. Identify major technical risks and decisions that need to be resolved.
+
+Do not install large sets of dependencies or modify existing files during this initial planning step.
+
+Do not invent credentials, asset files, external service status or verified manufacturer data.
+
+Present the plan and wait for my approval before implementing Phase 1.
+
+After approval, implement Phase 1 only, test it, document the result and wait for approval before continuing.

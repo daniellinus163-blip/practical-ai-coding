@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Dropped 3D assets (licence may forbid redistributing the raw file)
+/public/models/**/*.glb
+/public/models/**/*.gltf
+/public/models/**/*.bin
+/public/models/**/*.png
+/public/models/**/*.jpg
+/public/models/**/*.jpeg
+/public/models/**/*.webp

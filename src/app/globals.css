@@ -1,26 +1,92 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f4efe6;
+  --bg-2: #ebe4d6;
+  --card: #fffcf7;
+  --ink: #171512;
+  --muted: #4a453c;
+  --line: #d8d0c2;
+  --brass: #8a6a2f;
+  --brass-2: #c4a574;
+  --accent: #3b6ea8;
+  --silver: #c5c8ce;
+  --hero: #2a2d33;
+  --hero-text: #f6f1e8;
+  --danger: #9b3a2f;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-outfit);
+  --font-display: var(--font-fraunces);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html,
+  body {
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--font-outfit), system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-fraunces), Georgia, serif;
+  }
+
+  a {
+    text-decoration: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Light type on dark fills so labels never inherit ink-on-ink. */
+  .on-dark {
+    color: var(--hero-text);
+  }
+
+  .on-dark:hover {
+    color: var(--hero-text);
+  }
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--brass-2);
+  color: var(--ink);
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #e4ddd0 0%, #f7f3ea 45%, #e4ddd0 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.35s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+  }
 }
