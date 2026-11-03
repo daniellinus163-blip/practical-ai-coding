@@ -1,7 +1,9 @@
+
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type State = { error: string | null; success: string | null };
 
@@ -16,11 +18,96 @@ export function CredentialsForm({
   mode: "signin" | "signup" | "reset" | "password";
   nextPath?: string;
 }) {
-  const [state, formAction, pending] = useActionState(action, { error: null, success: null });
+  const [state, formAction, pending] = useActionState(action, {
+    error: null,
+    success: null,
+  });
+
+  const [oauthPending, setOauthPending] = useState<
+    "github" | "twitter" | null
+  >(null);
+  const [oauthError, setOauthError] = useState<string | null>(null);
+
+  async function signInWithProvider(provider: "github" | "twitter") {
+    setOauthPending(provider);
+    setOauthError(null);
+
+    const supabase = createBrowserSupabaseClient();
+
+    if (!supabase) {
+      setOauthError("Supabase is not configured.");
+      setOauthPending(null);
+      return;
+    }
+
+    const callbackUrl = new URL(
+      "/auth/callback",
+      window.location.origin
+    );
+
+    if (nextPath) {
+      callbackUrl.searchParams.set("next", nextPath);
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: callbackUrl.toString(),
+      },
+    });
+
+    if (error) {
+      setOauthError(error.message);
+      setOauthPending(null);
+    }
+  }
+
+  const showSocialButtons = mode === "signin" || mode === "signup";
 
   return (
     <form action={formAction} className="space-y-4">
-      {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
+      {nextPath ? (
+        <input type="hidden" name="next" value={nextPath} />
+      ) : null}
+
+      {showSocialButtons ? (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => signInWithProvider("github")}
+            disabled={oauthPending !== null}
+            className="w-full border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)] disabled:opacity-60"
+          >
+            {oauthPending === "github"
+              ? "Connecting to GitHub..."
+              : "Continue with GitHub"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => signInWithProvider("twitter")}
+            disabled={oauthPending !== null}
+            className="w-full border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)] disabled:opacity-60"
+          >
+            {oauthPending === "twitter"
+              ? "Connecting to X..."
+              : "Continue with X"}
+          </button>
+
+          {oauthError ? (
+            <p className="text-sm text-[var(--danger)]">{oauthError}</p>
+          ) : null}
+
+          <div className="flex items-center gap-3 py-2">
+            <div className="h-px flex-1 bg-[var(--line)]" />
+            <span className="text-xs text-[var(--muted)]">
+              OR CONTINUE WITH EMAIL
+            </span>
+            <div className="h-px flex-1 bg-[var(--line)]" />
+          </div>
+        </div>
+      ) : null}
+
       {mode === "signup" ? (
         <label className="block text-sm">
           Display name
@@ -33,6 +120,7 @@ export function CredentialsForm({
           />
         </label>
       ) : null}
+
       {mode !== "password" ? (
         <label className="block text-sm">
           Email
@@ -45,6 +133,7 @@ export function CredentialsForm({
           />
         </label>
       ) : null}
+
       {mode !== "reset" ? (
         <label className="block text-sm">
           Password
@@ -53,20 +142,30 @@ export function CredentialsForm({
             type="password"
             required
             minLength={8}
-            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            autoComplete={
+              mode === "signin" ? "current-password" : "new-password"
+            }
             className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2 text-[var(--ink)]"
           />
         </label>
       ) : null}
-      {state.error ? <p className="text-sm text-[var(--danger)]">{state.error}</p> : null}
-      {state.success ? <p className="text-sm text-[var(--ink)]">{state.success}</p> : null}
+
+      {state.error ? (
+        <p className="text-sm text-[var(--danger)]">{state.error}</p>
+      ) : null}
+
+      {state.success ? (
+        <p className="text-sm text-[var(--ink)]">{state.success}</p>
+      ) : null}
+
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || oauthPending !== null}
         className="on-dark bg-[var(--ink)] px-4 py-2 text-sm disabled:opacity-60"
       >
         {pending ? "Please wait…" : submitLabel}
       </button>
+
       {mode === "signin" ? (
         <p className="text-sm text-[var(--muted)]">
           <Link href="/register" className="underline">
@@ -78,6 +177,7 @@ export function CredentialsForm({
           </Link>
         </p>
       ) : null}
+
       {mode === "signup" ? (
         <p className="text-sm text-[var(--muted)]">
           Already have an account?{" "}
