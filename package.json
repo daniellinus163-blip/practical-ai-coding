@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "sync:models": "npx --yes tsx scripts/sync-models.ts",
+    "prebuild": "npm run sync:models",
     "test:events": "npx --yes tsx --test src/events/*.test.ts src/inquiries/*.test.ts"
   },
   "dependencies": {

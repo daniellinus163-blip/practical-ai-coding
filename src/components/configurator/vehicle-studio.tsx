@@ -56,6 +56,7 @@ export function VehicleStudio({
   const stageRef = useRef<HTMLDivElement>(null);
   const photo = photoFor(asset.vehicleSlug);
   const [loadState, setLoadState] = useState<LoadState>("ready");
+  const [modelLoading, setModelLoading] = useState(true);
   const [preset, setPreset] = useState<CameraPresetId>(restored?.preset ?? "threeQuarter");
   const [theme, setTheme] = useState<StudioTheme>(restored?.theme ?? "studio");
   const [paintId, setPaintId] = useState<string>(restored?.paintId ?? "original");
@@ -75,11 +76,38 @@ export function VehicleStudio({
   const reducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotion, () => false);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setModelLoading(true);
+    });
+    void (async () => {
+      try {
+        const response = await fetch(asset.publicUrl, { method: "HEAD", cache: "no-store" });
+        if (!cancelled) {
+          setLoadState(response.ok ? "ready" : "missing");
+          if (!response.ok) setModelLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setLoadState("missing");
+          setModelLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [asset.publicUrl]);
+
   const checkFile = useCallback(() => {
-    setLoadState("ready");
+    window.location.reload();
   }, []);
 
-  const onInspect = useCallback((report: SceneInspection) => setInspection(report), []);
+  const onInspect = useCallback((report: SceneInspection) => {
+    setInspection(report);
+    setModelLoading(false);
+  }, []);
   const onMaterials = useCallback(
     (next: { paint: string[]; rims: string[]; calipers: string[] }) => setDetected(next),
     [],
@@ -214,6 +242,11 @@ export function VehicleStudio({
           {loadState === "webgl-failed" ? (
             <ImageFallback src={photo.src} alt={photo.alt} credit={photo.credit} message="WebGL failed." onRetry={checkFile} />
           ) : null}
+          {modelLoading && loadState === "ready" ? (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[#d7d2c8]/80 text-sm text-[var(--ink)]">
+              Loading 3D model…
+            </div>
+          ) : null}
           {loadState === "ready" ? (
             <StudioErrorBoundary
               fallback={
@@ -222,7 +255,11 @@ export function VehicleStudio({
                   alt={photo.alt}
                   credit={photo.credit}
                   message="The 3D runtime failed. Showing an editorial photograph."
-                  onRetry={() => window.location.reload()}
+                  onRetry={() => {
+                    setModelLoading(true);
+                    setLoadState("ready");
+                    window.location.reload();
+                  }}
                 />
               }
             >

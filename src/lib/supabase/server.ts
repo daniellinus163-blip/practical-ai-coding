@@ -1,6 +1,24 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAnonKey, getSupabaseUrl, isSupabaseConfigured } from "@/lib/supabase/env";
+
+/** Route Handlers must attach session cookies to the same NextResponse that redirects. */
+export function createRouteHandlerSupabaseClient(request: NextRequest, response: NextResponse) {
+  return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        for (const { name, value, options } of cookiesToSet) {
+          request.cookies.set(name, value);
+          response.cookies.set(name, value, options);
+        }
+      },
+    },
+  });
+}
 
 export async function createServerSupabaseClient() {
   if (!isSupabaseConfigured()) return null;

@@ -41,11 +41,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Dropped 3D assets (licence may forbid redistributing the raw file)
-/public/models/**/*.glb
-/public/models/**/*.gltf
-/public/models/**/*.bin
-/public/models/**/*.png
-/public/models/**/*.jpg
-/public/models/**/*.jpeg
-/public/models/**/*.webp
+# 3D assets ship from public/models/ (owner-supplied; confirm licence before pushing).
+# Run npm run sync:models after adding files under “3d car models/”.

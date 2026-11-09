@@ -1,6 +1,6 @@
 "use client";
 
-import { ContactShadows, Environment, Html, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
+import { ContactShadows, Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { Box3, Color, MathUtils, Vector3, type Mesh, type MeshStandardMaterial } from "three";
@@ -27,7 +27,7 @@ const themes: Record<StudioTheme, string> = {
 
 export function StudioExperience({
   glbUrl,
-  vehicleSlug = "",
+  vehicleSlug: _vehicleSlug = "",
   paintHex,
   paintMaterialNames,
   caliperHex,
@@ -89,7 +89,7 @@ export function StudioExperience({
       />
       <directionalLight position={[-6, 4, -3]} intensity={0.4} color="#9eb6d4" />
       <directionalLight position={[0, 3, -6]} intensity={0.25} />
-      <Suspense fallback={<Loader />}>
+      <Suspense fallback={null}>
         <FittedVehicle
           url={glbUrl}
           paintHex={paintHex}
@@ -125,18 +125,6 @@ export function StudioExperience({
       />
       <CameraPresetController preset={preset} reducedMotion={reducedMotion} />
     </Canvas>
-  );
-}
-
-function Loader() {
-  const { progress, active, loaded, total } = useProgress();
-  const label = active && total > 0 ? `${Math.round((loaded / total) * 100)}%` : `${Math.round(progress)}%`;
-  return (
-    <Html center>
-      <div className="rounded-sm border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-800 shadow">
-        Loading 3D model {label}
-      </div>
-    </Html>
   );
 }
 
@@ -190,7 +178,11 @@ function FittedVehicle({
       else mesh.material = mesh.material.clone();
     });
     if (!lite) stashOriginalColors(clone);
-    alignNoseToPositiveZ(clone);
+    try {
+      alignNoseToPositiveZ(clone);
+    } catch {
+      // Some exports mis-label wheels; skip auto-facing rather than break the studio.
+    }
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
@@ -200,7 +192,14 @@ function FittedVehicle({
     clone.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
     clone.updateMatrixWorld(true);
     const parts = lite ? [] : catalogColorableParts(clone);
-    const handles = lite ? [] : rigMovingPanels(clone);
+    let handles: PanelHandle[] = [];
+    if (!lite) {
+      try {
+        handles = rigMovingPanels(clone);
+      } catch {
+        handles = [];
+      }
+    }
     return { clone, parts, handles };
   }, [gltf.scene, lite]);
   const clone = prepared.clone;

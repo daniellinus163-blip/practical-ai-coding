@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Provider } from "@supabase/supabase-js";
 import { useActionState, useState } from "react";
+import { oauthCallbackRedirectUri, setAuthNextCookie } from "@/lib/supabase/auth-redirect";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type State = { error: string | null; success: string | null };
@@ -41,13 +42,13 @@ export function CredentialsForm({
       return;
     }
 
-    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    const origin = window.location.origin;
     if (nextPath) {
-      callbackUrl.searchParams.set("next", nextPath);
+      setAuthNextCookie(origin, nextPath);
     }
 
     const options: { redirectTo: string; scopes?: string } = {
-      redirectTo: callbackUrl.toString(),
+      redirectTo: oauthCallbackRedirectUri(origin),
     };
     if (provider === "github") {
       options.scopes = "read:user user:email";

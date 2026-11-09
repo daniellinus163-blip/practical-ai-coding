@@ -38,13 +38,13 @@ This creates catalog tables (public read), customer profiles, saved configuratio
 Authentication → URL configuration:
 
 - Site URL: `http://localhost:3000` (add your production origin later)
-- Redirect URLs:
+- **Site URL:** your live `https://` origin (not `localhost` after deployment).
+- **Redirect URLs** — list only the bare callback path **without query strings** (FormShift stores `next` in a short-lived cookie):
   - `http://localhost:3000/auth/callback`
-  - `http://localhost:3000/auth/callback?next=/account`
-  - `http://localhost:3000/auth/callback?next=/auth/update-password`
-  - Add the same three paths on your production `https://` origin before go-live.
+  - `https://YOUR-PRODUCTION-DOMAIN/auth/callback`
+  - Add a second line if you use both `www` and bare host (each must match what users type in the browser).
 
-**GitHub and X (OAuth):** Authentication → Providers → enable **GitHub** and **X** with the client id and secret from each developer console. The login and register pages call `signInWithOAuth` with providers `github` and `x` (OAuth 2.0 for X). Callback always returns to `/auth/callback` on the same origin you are using in the browser (`localhost` or production). If a provider rejects the login, the app sends you back to `/login?error=…`.
+**GitHub and X (OAuth):** Authentication → Providers → enable **GitHub** and **X (OAuth 2.0)**. The app calls `signInWithOAuth` with providers `github` and `x` (not the legacy `twitter` OAuth 1.0 provider). In the **X developer portal**, set the callback URL to `https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback` (Project Settings → API → URL). In **GitHub OAuth app**, set Authorization callback URL to the same Supabase `/auth/v1/callback` URL. Set `NEXT_PUBLIC_SITE_URL` on Vercel to the same `https://` origin as Site URL. A 400 on sign-in almost always means a redirect URL mismatch.
 
 Email confirmation: leave **Confirm email** on if you want a confirmation step. Registration then shows “check your email”. Turn it off only if you explicitly want instant sessions on local.
 
