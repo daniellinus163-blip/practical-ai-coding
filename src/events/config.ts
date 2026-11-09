@@ -80,7 +80,7 @@ function senderDomain(from: string): string {
 export function integrationsFor(type: string): Array<"internal" | "n8n" | "hubspot" | "resend" | "resend_staff"> {
   switch (type) {
     case "inquiry.received":
-      return ["internal", "hubspot", "resend", "resend_staff"];
+      return ["resend_staff", "internal", "hubspot", "resend"];
     case "lead.stage_changed":
       return ["hubspot"];
     case "follow_up.reminder":

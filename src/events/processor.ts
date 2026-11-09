@@ -114,6 +114,17 @@ export async function processOneEvent(input: {
     await input.store.enqueueDeliveryFailed(event, row.integration, row.last_error ?? "permanent_failure");
   }
 
+  if (event.event_type === "inquiry.received") {
+    const staff = outcomes.find((row) => row.integration === "resend_staff");
+    const staffOk = staff && (staff.status === "succeeded" || staff.status === "skipped");
+    const customerOnlyPermanent =
+      permanent.length > 0 && permanent.every((row) => row.integration === "resend");
+    if (staffOk && customerOnlyPermanent) {
+      await input.store.complete(event.id, "succeeded", null);
+      return;
+    }
+  }
+
   const allOk = outcomes.every((row) => row.status === "succeeded" || row.status === "skipped");
   if (allOk) {
     await input.store.complete(event.id, "succeeded", null);

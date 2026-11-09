@@ -16,7 +16,7 @@ test("customers can read only their own inquiries", () => {
 
 test("the inquiry handler saves through Supabase before the worker runs", () => {
   const save = action.indexOf('rpc("record_inquiry"');
-  const worker = action.indexOf('runEventWorker("after-inquiry")');
+  const worker = action.indexOf("runInquiryAutomation(", save);
   assert.ok(save > 0);
   assert.ok(worker > save);
   assert.equal(action.includes("api.hubapi.com"), false);

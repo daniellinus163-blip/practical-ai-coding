@@ -300,7 +300,7 @@ test("invalid payloads are dead-lettered", async () => {
 });
 
 test("inquiry events go to the app worker, HubSpot, and optional Resend", () => {
-  assert.deepEqual(integrationsFor("inquiry.received"), ["internal", "hubspot", "resend", "resend_staff"]);
+  assert.deepEqual(integrationsFor("inquiry.received"), ["resend_staff", "internal", "hubspot", "resend"]);
   assert.deepEqual(integrationsFor("lead.stage_changed"), ["hubspot"]);
   assert.deepEqual(integrationsFor("follow_up.reminder"), ["internal", "resend"]);
   assert.deepEqual(integrationsFor("configuration.saved"), []);
@@ -357,7 +357,7 @@ test("customer email failure still attempts the staff notification", async () =>
   assert.equal(store.deliveries.find((row) => row.integration === "resend")?.status, "failed");
   assert.equal(store.deliveries.find((row) => row.integration === "resend")?.last_error, "resend_recipient_not_permitted");
   assert.equal(store.deliveries.find((row) => row.integration === "resend_staff")?.status, "succeeded");
-  assert.equal(store.completed[0]?.endsWith(":failed"), true);
+  assert.equal(store.completed[0]?.endsWith(":succeeded"), true);
   assert.equal(calls.filter((url) => url.includes("api.resend.com")).length, 2);
   assert.equal(store.deliveries.find((row) => row.integration === "resend")?.last_error?.includes("owner@resend.dev"), false);
 });
@@ -432,7 +432,7 @@ test("retry does not resend an email that already succeeded", async () => {
   const store = memoryStore();
   await processOneEvent({ store, deliver: adapters.deliver, config, event: baseEvent() });
   await processOneEvent({ store, deliver: adapters.deliver, config, event: { ...baseEvent(), attempt_count: 2 } });
-  assert.deepEqual(sentTo, ["buyer@example.com", "staff@example.com", "buyer@example.com"]);
+  assert.deepEqual(sentTo, ["staff@example.com", "buyer@example.com", "buyer@example.com"]);
   assert.equal(store.deliveries.find((row) => row.integration === "resend_staff")?.status, "succeeded");
   assert.equal(store.deliveries.find((row) => row.integration === "hubspot")?.status, "succeeded");
 });

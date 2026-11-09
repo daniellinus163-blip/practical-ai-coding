@@ -15,6 +15,9 @@ const fraunces = Fraunces({
   subsets: ["latin"],
 });
 
+/** Allow HubSpot + Resend to finish during inquiry submit on Vercel. */
+export const maxDuration = 60;
+
 export const metadata: Metadata = {
   title: {
     default: "FormShift AI",

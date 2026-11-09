@@ -6,8 +6,8 @@ import { catalogRepository } from "@/catalog/local-repository";
 import { getVehicle3DAsset } from "@/configurator/manifest";
 import { sanitizePublicConfig } from "@/configurator/saved-config";
 import { safeLogMessage } from "@/events/log";
-import { runEventWorker } from "@/events/run";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { runInquiryAutomation, wakeEventWorkerHttp } from "@/events/run";
+import { isServiceRoleConfigured, isSupabaseConfigured } from "@/lib/supabase/env";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
 import { validEmail, validMessage, validName } from "@/lib/validation";
 
@@ -79,17 +79,29 @@ export async function submitInquiryAction(
     return { ...empty, error: error?.message ?? "Could not save the inquiry." };
   }
 
-  const result = data as { duplicate?: boolean; inquiry_id?: string };
+  const result = data as {
+    duplicate?: boolean;
+    inquiry_id?: string;
+    event_id?: string;
+  };
   const referenceId = result.inquiry_id ?? null;
 
+  if (!isServiceRoleConfigured()) {
+    console.error("[events]", "SUPABASE_SERVICE_ROLE_KEY missing — inquiry saved but email/CRM worker cannot run.");
+  }
+
   try {
-    const worker = await runEventWorker("after-inquiry");
+    const worker = await runInquiryAutomation(result.event_id, "after-inquiry");
     if (worker.error) {
       console.error("[events]", safeLogMessage(worker.error));
+      void wakeEventWorkerHttp();
+    } else if (worker.processed === 0 && result.event_id) {
+      void wakeEventWorkerHttp();
     }
   } catch (workerError) {
     const message = workerError instanceof Error ? workerError.message : "worker_failed";
     console.error("[events]", safeLogMessage(message));
+    void wakeEventWorkerHttp();
   }
 
   revalidatePath("/account/inquiries");

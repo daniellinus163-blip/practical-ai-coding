@@ -12,7 +12,7 @@ export function createSupabaseEventStore(admin: SupabaseClient): EventStore {
         p_worker: worker,
       });
       if (error) throw error;
-      return ((data ?? []) as Record<string, unknown>[]).map(asEvent);
+      return ((data ?? []) as Record<string, unknown>[]).map(eventFromRow);
     },
     async complete(id, status, error) {
       const { error: rpcError } = await admin.rpc("complete_automation_event", {
@@ -178,7 +178,7 @@ async function loadInquiryMessage(admin: SupabaseClient, inquiryId: string | nul
   return data?.message ?? null;
 }
 
-function asEvent(row: Record<string, unknown>): AutomationEvent {
+export function eventFromRow(row: Record<string, unknown>): AutomationEvent {
   return {
     id: String(row.id),
     event_type: row.event_type as EventType,
