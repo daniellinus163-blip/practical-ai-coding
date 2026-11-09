@@ -14,16 +14,13 @@ export function AuthAccountChip({
   email: string;
   avatarUrl: string | null;
 }) {
-  const [src, setSrc] = useState(avatarUrl);
-
-  useEffect(() => {
-    setSrc(avatarUrl);
-  }, [avatarUrl]);
+  const [previewSrc, setPreviewSrc] = useState<string | null | undefined>(undefined);
+  const src = previewSrc === undefined ? avatarUrl : previewSrc;
 
   useEffect(() => {
     const onPreview = (event: Event) => {
       const next = (event as CustomEvent<string | null>).detail;
-      setSrc(next);
+      setPreviewSrc(next);
     };
     window.addEventListener(AVATAR_PREVIEW_EVENT, onPreview);
     return () => window.removeEventListener(AVATAR_PREVIEW_EVENT, onPreview);

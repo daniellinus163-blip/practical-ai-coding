@@ -131,23 +131,6 @@ function looksModeledOpen(doorBox: Box3, carBox: Box3) {
   return sitsHigh && reachesRoof && doorH > carH * 0.28;
 }
 
-function dihedralClosedScore(doorBox: Box3, carBox: Box3, side: "left" | "right") {
-  const carH = carBox.max.y - carBox.min.y;
-  const carW = carBox.max.x - carBox.min.x;
-  const center = doorBox.getCenter(new Vector3());
-  const sill = carBox.min.y + carH * 0.34;
-  const roof = carBox.max.y - carH * 0.12;
-  const flank = carW * 0.36;
-  const wantX = side === "left" ? -flank : flank;
-  let score = Math.abs(doorBox.min.y - sill) * 10;
-  score += Math.abs(doorBox.max.y - roof) * 6;
-  score += Math.max(0, doorBox.max.y - carBox.max.y) * 40;
-  score += Math.max(0, carBox.min.y + carH * 0.05 - doorBox.min.y) * 30;
-  score += Math.abs(center.x - wantX) * 14;
-  if ((side === "left" && center.x > 0) || (side === "right" && center.x < 0)) score += 80;
-  return score;
-}
-
 function closedScore(doorBox: Box3, carBox: Box3) {
   const carW = carBox.max.x - carBox.min.x;
   const center = doorBox.getCenter(new Vector3());
@@ -159,19 +142,14 @@ function closedScore(doorBox: Box3, carBox: Box3) {
   return score;
 }
 
-function solveAngle(
-  rotator: Group,
-  object: Object3D,
-  carBox: Box3,
-  scoreAt: (doorBox: Box3) => number = (doorBox) => closedScore(doorBox, carBox),
-) {
+function solveAngle(rotator: Group, object: Object3D, carBox: Box3) {
   let best = 0;
   let bestScore = Infinity;
   for (let step = -36; step <= 36; step += 1) {
     const angle = (step / 36) * Math.PI;
     rotator.rotation.y = angle;
     rotator.updateWorldMatrix(true, true);
-    const score = scoreAt(worldBox(object));
+    const score = closedScore(worldBox(object), carBox);
     if (score < bestScore) {
       bestScore = score;
       best = angle;
@@ -201,7 +179,7 @@ function calibrateOutward(handle: PanelHandle, object: Object3D, carCenterX: num
 
 function tooBig(object: Object3D, maxSpan: number) {
   return worldBox(object).getSize(new Vector3()).length() > maxSpan * 0.88;
-}
+  }
 
 function rigSwingDoor(
   object: Object3D,
@@ -220,7 +198,7 @@ function rigSwingDoor(
   const hinge = new Vector3();
   hinge.x = (side === "left" ? box.max.x : box.min.x) + towardCenter * Math.min(size.x * 0.02, 0.03);
   if (modeledOpen) {
-    hinge.y = box.min.y + size.y * 0.05;
+    hinge.y = box.max.y - size.y * 0.04;
     hinge.z = center.z;
   } else {
     hinge.y = box.min.y + size.y * 0.5;
@@ -229,9 +207,7 @@ function rigSwingDoor(
 
   const axis = modeledOpen ? new Vector3(0, 0, front >= 0 ? 1 : -1) : Y_AXIS;
   const rotator = wrapHinge(object, hinge, axis);
-  const closedAngle = modeledOpen
-    ? solveAngle(rotator, object, carBox, (doorBox) => dihedralClosedScore(doorBox, carBox, side))
-    : 0;
+  const closedAngle = modeledOpen ? solveAngle(rotator, object, carBox) : 0;
   rotator.rotation.y = closedAngle;
   rotator.updateWorldMatrix(true, true);
 
@@ -332,7 +308,7 @@ function clusterDoors(nodes: Object3D[], carCenterX: number, front: number) {
   };
 }
 
-export function rigMovingPanels(root: Object3D, _vehicleSlug = ""): PanelHandle[] {
+export function rigMovingPanels(root: Object3D): PanelHandle[] {
   if (root.userData.formshiftPanelsRigged) {
     return (root.userData.formshiftPanelHandles as PanelHandle[]) ?? [];
   }

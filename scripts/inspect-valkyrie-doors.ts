@@ -1,29 +1,18 @@
 import fs from "node:fs";
 import { Box3, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { rigMovingPanels } from "../src/configurator/moving-panels";
-import { alignNoseToPositiveZ } from "../src/configurator/vehicle-facing";
+import { rigMovingPanels } from "../src/configurator/moving-panels.ts";
+import { alignNoseToPositiveZ } from "../src/configurator/vehicle-facing.ts";
 
-const g = globalThis as unknown as {
-  self: typeof globalThis;
-  document: Document;
-};
-
+const g = globalThis as typeof globalThis & { self?: typeof globalThis; document?: object };
 g.self = globalThis;
-
 g.document = {
-  createElementNS: (_namespace: string, tagName: string) => {
-    if (tagName === "canvas") {
-      return {
-        width: 0,
-        height: 0,
-        getContext: () => null,
-      } as unknown as SVGElement;
-    }
-
-    return {} as SVGElement;
-  },
-} as unknown as Document;
+  createElementNS: () => ({
+    width: 0,
+    height: 0,
+    getContext: () => null,
+  }),
+};
 if (!globalThis.URL.createObjectURL) {
   globalThis.URL.createObjectURL = () => "blob:node";
 }
@@ -68,7 +57,7 @@ loader.parse(
       markers.push(`${object.name} ${c.x.toFixed(2)},${c.y.toFixed(2)},${c.z.toFixed(2)}`);
     });
     console.log(markers.slice(0, 40).join("\n"));
-    const handles = rigMovingPanels(clone, "aston-martin-valkyrie");
+    const handles = rigMovingPanels(clone);
     for (const handle of handles) {
       const panel = new Box3().setFromObject(handle.pivot);
       console.log(

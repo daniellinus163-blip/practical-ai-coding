@@ -9,7 +9,7 @@ export const metadata = { title: "Sign in" };
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   return (
     <div className="mx-auto max-w-md space-y-6 px-4 py-12">
@@ -22,14 +22,20 @@ export default function LoginPage({
   );
 }
 
-async function LoginForm({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+async function LoginForm({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
   const params = await searchParams;
+  const oauthError = params.error?.trim() || null;
   return (
     <CredentialsForm
       action={signInAction}
       submitLabel="Sign in"
       mode="signin"
       nextPath={safeNextPath(params.next)}
+      oauthError={oauthError}
     />
   );
 }

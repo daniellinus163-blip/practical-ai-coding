@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { cameraPresets, type CameraPresetId } from "@/components/configurator/camera-presets";
 import { StudioErrorBoundary } from "@/components/configurator/error-boundary";
 import type { StudioTheme } from "@/components/configurator/studio-experience";
@@ -72,16 +72,8 @@ export function VehicleStudio({
   const [partColors, setPartColors] = useState<Record<string, string>>(restored?.partColors ?? {});
   const [openPanels, setOpenPanels] = useState<Record<string, boolean>>(restored?.openPanels ?? {});
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const reducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotion, () => false);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
-    const onChange = () => setReducedMotion(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
 
   const checkFile = useCallback(() => {
     setLoadState("ready");
@@ -531,4 +523,14 @@ function ImageFallback({
       </div>
     </div>
   );
+}
+
+function getReducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function subscribeReducedMotion(onStoreChange: () => void) {
+  const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+  mq.addEventListener("change", onStoreChange);
+  return () => mq.removeEventListener("change", onStoreChange);
 }

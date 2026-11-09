@@ -42,6 +42,9 @@ Authentication → URL configuration:
   - `http://localhost:3000/auth/callback`
   - `http://localhost:3000/auth/callback?next=/account`
   - `http://localhost:3000/auth/callback?next=/auth/update-password`
+  - Add the same three paths on your production `https://` origin before go-live.
+
+**GitHub and X (OAuth):** Authentication → Providers → enable **GitHub** and **X** with the client id and secret from each developer console. The login and register pages call `signInWithOAuth` with providers `github` and `x` (OAuth 2.0 for X). Callback always returns to `/auth/callback` on the same origin you are using in the browser (`localhost` or production). If a provider rejects the login, the app sends you back to `/login?error=…`.
 
 Email confirmation: leave **Confirm email** on if you want a confirmation step. Registration then shows “check your email”. Turn it off only if you explicitly want instant sessions on local.
 

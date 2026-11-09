@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export const metadata = { title: "Not authorised" };
 
 export default function StaffDeniedPage() {
@@ -10,9 +12,9 @@ export default function StaffDeniedPage() {
         with SQL — FormShift never creates a default admin.
       </p>
       <p>
-        <a href="/" className="underline">
+        <Link href="/" className="underline">
           Back to the catalog
-        </a>
+        </Link>
       </p>
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { requireStaff } from "@/crm/guard";
 import { PIPELINE_STAGES, STAGE_LABELS } from "@/crm/stages";
@@ -16,6 +17,7 @@ export default function StaffOverviewPage() {
 }
 
 async function StaffOverview() {
+  await connection();
   const staff = await requireStaff("/staff");
   if (!staff.admin) {
     return (
@@ -25,8 +27,9 @@ async function StaffOverview() {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [stageCounts, total, openTasks, overdue, recentInquiries] = await Promise.all([
     Promise.all(

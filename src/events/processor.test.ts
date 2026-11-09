@@ -62,9 +62,7 @@ function memoryStore(): EventStore & { deliveries: DeliveryRow[]; completed: Arr
       vehicleSlug: "aston-martin-valkyrie",
       leadStatus: "new",
     }),
-    enqueueDeliveryFailed: async () => {
-      (memoryStore as unknown as { failedEvents?: number }).failedEvents;
-    },
+    enqueueDeliveryFailed: async () => undefined,
   };
 }
 

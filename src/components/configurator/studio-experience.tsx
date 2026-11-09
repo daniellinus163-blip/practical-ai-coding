@@ -92,7 +92,6 @@ export function StudioExperience({
       <Suspense fallback={<Loader />}>
         <FittedVehicle
           url={glbUrl}
-          vehicleSlug={vehicleSlug}
           paintHex={paintHex}
           paintMaterialNames={paintMaterialNames}
           caliperHex={caliperHex}
@@ -143,7 +142,6 @@ function Loader() {
 
 function FittedVehicle({
   url,
-  vehicleSlug,
   paintHex,
   paintMaterialNames,
   caliperHex,
@@ -162,7 +160,6 @@ function FittedVehicle({
   lite = false,
 }: {
   url: string;
-  vehicleSlug: string;
   paintHex: string | null;
   paintMaterialNames: string[];
   caliperHex: string | null;
@@ -203,12 +200,15 @@ function FittedVehicle({
     clone.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
     clone.updateMatrixWorld(true);
     const parts = lite ? [] : catalogColorableParts(clone);
-    const handles = lite ? [] : rigMovingPanels(clone, vehicleSlug);
+    const handles = lite ? [] : rigMovingPanels(clone);
     return { clone, parts, handles };
-  }, [gltf.scene, lite, vehicleSlug]);
+  }, [gltf.scene, lite]);
   const clone = prepared.clone;
   const handlesRef = useRef<PanelHandle[]>(prepared.handles);
-  handlesRef.current = prepared.handles;
+
+  useLayoutEffect(() => {
+    handlesRef.current = prepared.handles;
+  }, [prepared.handles]);
 
   useLayoutEffect(() => {
     onInspect(inspectScene(clone));
@@ -286,11 +286,14 @@ function PanelAnimator({
 }) {
   useFrame((_, delta) => {
     const t = reducedMotion ? 1 : 1 - Math.exp(-delta * 6);
+    /* eslint-disable react-hooks/immutability -- Three.js pivot animation runs in useFrame, not React render. */
     for (const handle of handlesRef.current) {
       const target = openPanels[handle.id] ? handle.openAngle : handle.closedAngle;
-      handle.currentAngle = MathUtils.lerp(handle.currentAngle, target, t);
-      handle.pivot.rotation.y = handle.currentAngle;
+      const angle = MathUtils.lerp(handle.currentAngle, target, t);
+      handle.pivot.rotation.y = angle;
+      handle.currentAngle = angle;
     }
+    /* eslint-enable react-hooks/immutability */
   });
   return null;
 }
