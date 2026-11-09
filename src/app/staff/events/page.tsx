@@ -2,10 +2,15 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { requireStaff } from "@/crm/guard";
 import { canRetryEvents } from "@/events/auth";
+import { loadIntegrationSnapshot } from "@/crm/integration-snapshot";
+import { hubspotPortalIdFromEnv } from "@/crm/hubspot-links";
 import { integrationHealth, loadIntegrationConfig } from "@/events/config";
 import { EmptyState } from "@/components/catalog/empty-state";
-import { StaffShell } from "@/components/staff/staff-shell";
 import { EventsRetryControls } from "@/components/staff/events-retry-controls";
+import { HubspotVerifyForm } from "@/components/staff/hubspot-verify-form";
+import { IntegrationHealthCards } from "@/components/staff/integration-health-cards";
+import { ResendTestForm } from "@/components/staff/resend-test-form";
+import { StaffShell } from "@/components/staff/staff-shell";
 
 export const metadata = { title: "Integrations" };
 
@@ -29,7 +34,10 @@ async function StaffEventsBody() {
     );
   }
 
-  const health = integrationHealth(loadIntegrationConfig());
+  const config = loadIntegrationConfig();
+  const health = integrationHealth(config);
+  const integrationCards = await loadIntegrationSnapshot(db, config, { serviceRolePresent: staff.serviceRole });
+  const testRecipient = process.env.RESEND_TEST_RECIPIENT?.trim() || null;
   const now = new Date().toISOString();
   const countStatus = (status: string | string[]) => {
     const query = db.from("automation_events").select("id", { count: "exact", head: true });
@@ -96,7 +104,13 @@ async function StaffEventsBody() {
         <section>
           <h2 className="font-display text-2xl">Integration health</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Flags show whether credentials exist on the server. They do not prove a live provider call succeeded.
+            Cards use database delivery history and configuration checks — not simulated status lights.
+          </p>
+          <div className="mt-4">
+            <IntegrationHealthCards cards={integrationCards} />
+          </div>
+          <p className="mt-3 text-xs text-[var(--muted)]">
+            HubSpot portal for deep links: {hubspotPortalIdFromEnv() ?? "set HUBSPOT_PORTAL_ID (numeric)"}
           </p>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Health label="HubSpot token" ok={health.hubspot} />
@@ -127,7 +141,15 @@ async function StaffEventsBody() {
           </p>
         </section>
 
-        {admin ? <EventsRetryControls /> : <p className="text-sm text-[var(--muted)]">Only administrators can retry or run the worker.</p>}
+        {admin ? (
+          <div className="space-y-4">
+            <EventsRetryControls />
+            <HubspotVerifyForm />
+            <ResendTestForm allowedRecipient={testRecipient} />
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--muted)]">Only administrators can retry, verify, or send test email.</p>
+        )}
 
         <section>
           <h2 className="font-display text-2xl">Failed events</h2>

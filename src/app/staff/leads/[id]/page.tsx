@@ -7,6 +7,8 @@ import { AssignForm, NoteForm, StageForm, TaskForm } from "@/components/staff/le
 import { listStaffDirectory, requireStaff } from "@/crm/guard";
 import { isPipelineStage, STAGE_LABELS } from "@/crm/stages";
 import { EmptyState } from "@/components/catalog/empty-state";
+import { loadLeadIntegrationView } from "@/crm/lead-automation";
+import { LeadIntegrationPanel } from "@/components/staff/lead-integration-panel";
 import { StaffShell } from "@/components/staff/staff-shell";
 
 export const metadata = { title: "Lead" };
@@ -91,6 +93,12 @@ async function LeadDetail({ params }: { params: Promise<{ id: string }> }) {
       ? (inquiry.configuration_snapshot as Record<string, unknown>)
       : null;
 
+  const integration = await loadLeadIntegrationView(staff.admin, {
+    leadId: id,
+    inquiryId: lead.inquiry_id,
+    inquirySubmittedAt: inquiry?.created_at ?? null,
+  });
+
   return (
     <StaffShell nextPath={`/staff/leads/${id}`}>
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
@@ -141,8 +149,16 @@ async function LeadDetail({ params }: { params: Promise<{ id: string }> }) {
           )}
         </section>
 
+        <LeadIntegrationPanel
+          leadId={lead.id}
+          inquiryId={lead.inquiry_id}
+          inquiryCreatedAt={inquiry?.created_at ?? null}
+          configurationId={inquiry?.configuration_id ?? null}
+          integration={integration}
+        />
+
         <section className="space-y-3">
-          <h3 className="font-display text-xl">Activity</h3>
+          <h3 className="font-display text-xl">Staff activity</h3>
           {(activities ?? []).length === 0 ? (
             <EmptyState title="No activity yet" body="Stage changes, notes, and tasks appear here." />
           ) : (
