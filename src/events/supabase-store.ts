@@ -131,6 +131,7 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
       .eq("id", leadId)
       .maybeSingle();
     if (data) {
+      const message = await loadInquiryMessage(admin, data.inquiry_id ?? inquiryId);
       return {
         email: data.email ?? null,
         name: data.name ?? null,
@@ -138,13 +139,14 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
         inquiryId: data.inquiry_id ?? inquiryId,
         vehicleSlug: data.vehicle_slug ?? null,
         leadStatus: data.status ?? null,
+        message,
       };
     }
   }
   if (inquiryId) {
     const { data } = await admin
       .from("inquiries")
-      .select("id, email, name, vehicle_slug")
+      .select("id, email, name, vehicle_slug, message")
       .eq("id", inquiryId)
       .maybeSingle();
     if (data) {
@@ -155,6 +157,7 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
         inquiryId: data.id,
         vehicleSlug: data.vehicle_slug ?? null,
         leadStatus: "new",
+        message: data.message ?? null,
       };
     }
   }
@@ -165,7 +168,14 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
     inquiryId,
     vehicleSlug: typeof event.payload.vehicle_slug === "string" ? event.payload.vehicle_slug : null,
     leadStatus: typeof event.payload.to_status === "string" ? event.payload.to_status : null,
+    message: null,
   };
+}
+
+async function loadInquiryMessage(admin: SupabaseClient, inquiryId: string | null) {
+  if (!inquiryId) return null;
+  const { data } = await admin.from("inquiries").select("message").eq("id", inquiryId).maybeSingle();
+  return data?.message ?? null;
 }
 
 function asEvent(row: Record<string, unknown>): AutomationEvent {

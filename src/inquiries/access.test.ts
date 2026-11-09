@@ -23,7 +23,7 @@ test("the inquiry handler saves through Supabase before the worker runs", () => 
   assert.equal(action.includes("api.resend.com"), false);
   assert.equal(form.includes("api.hubapi.com"), false);
   assert.equal(form.includes("api.resend.com"), false);
-  assert.match(form, /pending \? "Sending…" : "Send inquiry"/);
+  assert.match(form, /pending \? "Sending to CRM…" : "Submit inquiry"/);
 });
 
 test("a saved inquiry enqueues its event inside the same database function", () => {

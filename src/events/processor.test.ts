@@ -215,6 +215,7 @@ test("HubSpot retries reuse mapped ids", async () => {
     inquiryId,
     vehicleSlug: "valkyrie",
     leadStatus: "new",
+    message: "Interested in allocation timeline.",
   };
   const first = await adapters.deliver("hubspot", baseEvent(), contact);
   map.set("hubspot:deal:inquiry:" + inquiryId, "D1");

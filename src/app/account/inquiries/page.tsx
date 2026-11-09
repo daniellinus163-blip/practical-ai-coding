@@ -6,6 +6,9 @@ import { AccountShell } from "@/components/account/account-shell";
 import { catalogRepository } from "@/catalog/local-repository";
 import { EmptyState } from "@/components/catalog/empty-state";
 import { SetupNotice } from "@/components/auth/setup-notice";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
 import { avatarPublicUrl } from "@/lib/profile";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
@@ -77,17 +80,29 @@ async function MyInquiriesBody() {
       ) : (
         <ul className="space-y-4">
           {rows.map((row) => (
-            <li key={row.id} className="border border-[var(--line)] bg-[var(--card)] p-5">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">
-                {row.status} · {row.vehicle_slug ? vehicleNames.get(row.vehicle_slug) ?? row.vehicle_slug : "General"}
-              </p>
-              <p className="mt-2 text-sm">{row.message}</p>
-              <p className="mt-2 text-xs text-[var(--muted)]">{formatSubmitted(row.created_at)}</p>
-              {row.vehicle_slug ? (
-                <Link href={`/cars/${row.vehicle_slug}`} className="mt-3 inline-block text-sm underline">
-                  Open vehicle
-                </Link>
-              ) : null}
+            <li key={row.id}>
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CardTitle className="font-display text-lg">
+                      {row.vehicle_slug ? vehicleNames.get(row.vehicle_slug) ?? row.vehicle_slug : "General inquiry"}
+                    </CardTitle>
+                    <Badge variant="outline">{row.status}</Badge>
+                    <Badge variant="secondary" className="font-mono text-[10px]">
+                      FSA-{row.id.slice(0, 8).toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{formatSubmitted(row.created_at)}</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm leading-relaxed">{row.message}</p>
+                  {row.vehicle_slug ? (
+                    <Link href={`/cars/${row.vehicle_slug}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                      Open vehicle
+                    </Link>
+                  ) : null}
+                </CardContent>
+              </Card>
             </li>
           ))}
         </ul>

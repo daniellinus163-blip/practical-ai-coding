@@ -56,4 +56,5 @@ export type ContactContext = {
   inquiryId: string | null;
   vehicleSlug: string | null;
   leadStatus: string | null;
+  message: string | null;
 };

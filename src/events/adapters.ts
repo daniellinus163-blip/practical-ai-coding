@@ -72,6 +72,7 @@ export function createAdapters(options: {
           name: contact.name || "there",
           vehicleSlug: contact.vehicleSlug,
           siteUrl: config.siteUrl,
+          inquiryId: contact.inquiryId,
         }),
       );
     }
@@ -84,6 +85,7 @@ export function createAdapters(options: {
           name: contact.name || "there",
           vehicleSlug: contact.vehicleSlug,
           siteUrl: config.siteUrl,
+          inquiryId: contact.inquiryId,
         }),
       );
     }
@@ -106,7 +108,9 @@ export function createAdapters(options: {
       internalInquiryEmail({
         vehicleSlug: contact.vehicleSlug,
         leadId: contact.leadId,
+        inquiryId: contact.inquiryId,
         siteUrl: config.siteUrl,
+        customerName: contact.name,
       }),
     );
   }
@@ -190,21 +194,28 @@ async function upsertHubspotDeal(
   const existing = await mappings.get("hubspot", "deal", "inquiry", localId);
   if (existing) {
     const stage = mappedStage(config, contact.leadStatus || String(event.payload.to_status ?? ""));
+    const properties: Record<string, string> = {
+      description: hubspotDealDescription(contact, event, config.siteUrl),
+    };
     if (stage && config.hubspotPipelineId) {
-      const patch = await hubspotRequest(
-        fetchImpl,
-        config,
-        "PATCH",
-        `/crm/v3/objects/deals/${existing}`,
-        JSON.stringify({ properties: { dealstage: stage, pipeline: config.hubspotPipelineId } }),
-      );
-      if (!patch.ok) return { ok: false, result: patch.result };
+      properties.dealstage = stage;
+      properties.pipeline = config.hubspotPipelineId;
     }
+    const patch = await hubspotRequest(
+      fetchImpl,
+      config,
+      "PATCH",
+      `/crm/v3/objects/deals/${existing}`,
+      JSON.stringify({ properties }),
+    );
+    if (!patch.ok) return { ok: false, result: patch.result };
     return { ok: true, id: existing };
   }
 
+  const summary = hubspotDealDescription(contact, event, config.siteUrl);
   const properties: Record<string, string> = {
-    dealname: `FormShift inquiry ${contact.vehicleSlug ?? localId.slice(0, 8)}`,
+    dealname: `FormShift · ${contact.vehicleSlug?.replace(/-/g, " ") ?? "General inquiry"}`,
+    description: summary,
   };
   const stage = mappedStage(config, contact.leadStatus || "new");
   if (config.hubspotPipelineId) properties.pipeline = config.hubspotPipelineId;
@@ -234,6 +245,19 @@ async function upsertHubspotDeal(
 
 function mappedStage(config: IntegrationConfig, status: string): string | null {
   return config.hubspotStages[status] || null;
+}
+
+function hubspotDealDescription(contact: ContactContext, event: AutomationEvent, siteUrl: string) {
+  const parts = [
+    "Source: FormShift AI digital studio",
+    contact.inquiryId ? `Inquiry ID: ${contact.inquiryId}` : null,
+    contact.leadId ? `Lead ID: ${contact.leadId}` : null,
+    contact.vehicleSlug ? `Vehicle: ${contact.vehicleSlug}` : null,
+    contact.message ? `Message: ${contact.message.slice(0, 500)}` : null,
+    siteUrl && contact.leadId ? `Staff: ${siteUrl.replace(/\/$/, "")}/staff/leads/${contact.leadId}` : null,
+    event.payload?.has_config === true ? "Includes 3D configuration snapshot." : null,
+  ].filter(Boolean);
+  return parts.join("\n");
 }
 
 function resendBlocked(event: AutomationEvent, config: IntegrationConfig): DeliveryResult | null {
