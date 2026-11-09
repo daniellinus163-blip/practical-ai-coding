@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${outfit.variable} ${fraunces.variable} h-full antialiased`}>
+    <html lang="en" className={`${outfit.variable} ${fraunces.variable} h-full antialiased font-sans`}>
       <body className="flex min-h-full flex-col bg-[var(--bg)] text-[var(--ink)]">
         <Suspense fallback={<div className="h-[72px] border-b border-[var(--line)]" />}>
           <SiteHeader />

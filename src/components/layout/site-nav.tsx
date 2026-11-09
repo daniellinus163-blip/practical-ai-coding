@@ -25,7 +25,7 @@ export function SiteNav({ compact = false }: { compact?: boolean }) {
             className={cn(
               compact ? "block py-2 text-sm" : "",
               "hover:text-[var(--brass)]",
-              active ? "text-[var(--brass)]" : "text-[var(--ink)]",
+              active ? "font-medium text-[var(--brass)]" : "text-foreground",
             )}
           >
             {link.label}

@@ -3,6 +3,12 @@
 import { useActionState } from "react";
 import { submitInquiryAction, type InquiryState } from "@/app/inquiries/actions";
 import { liveConfigKey, type PublicVehicleConfig } from "@/configurator/saved-config";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export function InquiryForm({
   vehicleSlug,
@@ -27,56 +33,61 @@ export function InquiryForm({
   }
 
   return (
-    <form action={wrappedAction} className="space-y-4 border border-[var(--line)] bg-[var(--card)] p-5">
-      <h2 className="font-display text-2xl">Request a quote</h2>
-      <p className="text-sm text-[var(--muted)]">
-        Name, email, and your question only. An inquiry is not an order, allocation, or manufacturer
-        reservation. The current studio selection is attached when present.
-      </p>
-      {vehicleSlug ? <input type="hidden" name="vehicleSlug" value={vehicleSlug} /> : null}
-      {configurationId ? <input type="hidden" name="configurationId" value={configurationId} /> : null}
-      {configuration ? (
-        <input type="hidden" name="configuration" value={JSON.stringify(configuration)} />
-      ) : null}
-      <label className="block text-sm">
-        Name
-        <input
-          name="name"
-          required
-          minLength={2}
-          maxLength={80}
-          className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2"
-        />
-      </label>
-      <label className="block text-sm">
-        Email
-        <input
-          name="email"
-          type="email"
-          required
-          className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2"
-        />
-      </label>
-      <label className="block text-sm">
-        Message
-        <textarea
-          name="message"
-          required
-          minLength={10}
-          maxLength={4000}
-          rows={5}
-          className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2"
-        />
-      </label>
-      {state.error ? <p className="text-sm text-[var(--danger)]">{state.error}</p> : null}
-      {state.success ? <p className="text-sm text-[var(--ink)]">{state.success}</p> : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="on-dark bg-[var(--ink)] px-4 py-2 text-sm disabled:opacity-60"
-      >
-        {pending ? "Sending…" : "Send inquiry"}
-      </button>
-    </form>
+    <Card className="shadow-[0_12px_40px_rgba(23,21,18,0.06)]">
+      <CardHeader>
+        <CardTitle className="font-display text-2xl">Request a quote</CardTitle>
+        <CardDescription>
+          Name, email, and your question only. An inquiry is not an order, allocation, or manufacturer
+          reservation. The current studio selection is attached when present.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form action={wrappedAction} className="space-y-4">
+          {vehicleSlug ? <input type="hidden" name="vehicleSlug" value={vehicleSlug} /> : null}
+          {configurationId ? <input type="hidden" name="configurationId" value={configurationId} /> : null}
+          {configuration ? (
+            <input type="hidden" name="configuration" value={JSON.stringify(configuration)} />
+          ) : null}
+          <div className="space-y-2">
+            <Label htmlFor="inquiry-name">Name</Label>
+            <Input id="inquiry-name" name="name" required minLength={2} maxLength={80} autoComplete="name" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="inquiry-email">Email</Label>
+            <Input
+              id="inquiry-email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="inquiry-message">Message</Label>
+            <Textarea
+              id="inquiry-message"
+              name="message"
+              required
+              minLength={10}
+              maxLength={4000}
+              rows={5}
+            />
+          </div>
+          {state.error ? (
+            <Alert variant="destructive">
+              <AlertDescription>{state.error}</AlertDescription>
+            </Alert>
+          ) : null}
+          {state.success ? (
+            <Alert>
+              <AlertDescription>{state.success}</AlertDescription>
+            </Alert>
+          ) : null}
+          <Button type="submit" disabled={pending} size="lg" className="w-full sm:w-auto">
+            {pending ? "Sending…" : "Send inquiry"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

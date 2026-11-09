@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { FactLegend } from "@/components/catalog/fact-legend";
 import { SpecList } from "@/components/catalog/spec-list";
@@ -14,6 +15,7 @@ import {
   sanitizePublicConfig,
   type PublicVehicleConfig,
 } from "@/configurator/saved-config";
+import { VehiclePageSkeleton } from "@/components/skeletons/vehicle-page-skeleton";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
 
 export async function generateStaticParams() {
@@ -36,7 +38,7 @@ export default function VehiclePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-6xl px-4 py-16">Loading vehicle…</div>}>
+    <Suspense fallback={<VehiclePageSkeleton />}>
       <VehicleBody params={params} searchParams={searchParams} />
     </Suspense>
   );
@@ -72,6 +74,7 @@ async function VehicleBody({
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await connection();
   const { slug } = await params;
   const vehicle = await catalogRepository.getVehicleBySlug(slug);
   if (!vehicle) notFound();

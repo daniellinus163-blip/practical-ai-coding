@@ -4,6 +4,8 @@ import { VehicleCard } from "@/components/catalog/vehicle-card";
 import { HomeMotion } from "@/components/home/home-motion";
 import { StudioTeaser } from "@/components/home/studio-teaser";
 import { catalogRepository } from "@/catalog/local-repository";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export default async function Home() {
   const vehicles = await catalogRepository.listVehicles();
@@ -25,15 +27,12 @@ export default async function Home() {
             manufacturer site.
           </p>
           <div data-hero="cta" className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="/discover"
-              className="on-dark bg-[var(--ink)] px-6 py-3 text-sm transition hover:bg-[var(--accent)]"
-            >
+            <Link href="/discover" className={buttonVariants({ size: "lg" })}>
               Discover cars
             </Link>
             <Link
               href="/cars/bugatti-chiron#studio"
-              className="border border-[var(--ink)] bg-white px-6 py-3 text-sm text-[var(--ink)] transition hover:border-[var(--accent)]"
+              className={buttonVariants({ variant: "outline", size: "lg" })}
             >
               Open Chiron studio
             </Link>
@@ -53,14 +52,11 @@ export default async function Home() {
           <h2 className="font-display mt-2 text-4xl text-[var(--ink)]">Filter the catalog by marque</h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {brands.map((brand) => (
-              <Link
-                key={brand.id}
-                data-reveal
-                href={`/discover?brand=${brand.slug}`}
-                className="border border-[var(--line)] bg-[var(--card)] p-6 transition hover:-translate-y-0.5 hover:border-[var(--accent)]"
-              >
-                <p className="font-display text-2xl text-[var(--ink)]">{brand.name}</p>
-                <p className="mt-2 text-sm text-[var(--ink)]">View vehicles →</p>
+              <Link key={brand.id} data-reveal href={`/discover?brand=${brand.slug}`} className="block">
+                <Card className="h-full p-6 transition hover:-translate-y-0.5 hover:ring-[var(--accent)]">
+                  <p className="font-display text-2xl">{brand.name}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">View vehicles →</p>
+                </Card>
               </Link>
             ))}
           </div>
@@ -99,7 +95,12 @@ export default async function Home() {
           </div>
           <Link
             href="/discover"
-            className="bg-white px-6 py-3 text-sm text-[var(--ink)] hover:bg-[var(--accent)] hover:text-[var(--hero-text)]"
+            className={buttonVariants({
+              variant: "secondary",
+              size: "lg",
+              className:
+                "bg-white text-foreground hover:bg-[var(--accent)] hover:text-[var(--hero-text)]",
+            })}
           >
             Start with Discover
           </Link>

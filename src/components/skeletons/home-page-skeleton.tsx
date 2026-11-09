@@ -1,3 +1,6 @@
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+
 export function HomePageSkeleton() {
   return (
     <div className="min-h-screen bg-[var(--bg)]" aria-busy="true" aria-label="Loading FormShift AI">
@@ -37,6 +40,6 @@ export function VehicleCardSkeleton() {
   return <Shimmer className="aspect-[16/10] w-full" />;
 }
 
-function Shimmer({ className }: { className: string }) {
-  return <div className={`skeleton-shimmer ${className}`} />;
+export function Shimmer({ className }: { className?: string }) {
+  return <Skeleton className={cn("skeleton-shimmer bg-transparent", className)} />;
 }

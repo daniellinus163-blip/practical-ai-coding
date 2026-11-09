@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { CompareBar } from "@/components/catalog/compare-bar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/catalog/empty-state";
 import { FactLegend } from "@/components/catalog/fact-legend";
 import { VehicleCard } from "@/components/catalog/vehicle-card";
@@ -27,8 +28,12 @@ export default function DiscoverPage({
 function DiscoverFallback() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
-      <div className="h-10 w-48 animate-pulse bg-[var(--bg-2)]" />
-      <div className="h-28 animate-pulse bg-[var(--bg-2)]" />
+      <Skeleton className="h-10 w-48" />
+      <Skeleton className="h-28 w-full" />
+      <div className="grid gap-6 md:grid-cols-2">
+        <Skeleton className="aspect-[16/10] w-full" />
+        <Skeleton className="aspect-[16/10] w-full" />
+      </div>
     </div>
   );
 }

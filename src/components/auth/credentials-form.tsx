@@ -5,6 +5,11 @@ import type { Provider } from "@supabase/supabase-js";
 import { useActionState, useState } from "react";
 import { oauthCallbackRedirectUri, setAuthNextCookie } from "@/lib/supabase/auth-redirect";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 type State = { error: string | null; success: string | null };
 
@@ -70,103 +75,101 @@ export function CredentialsForm({
 
       {showSocialButtons ? (
         <div className="space-y-3">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            className="w-full"
+            size="lg"
             onClick={() => signInWithProvider("github")}
             disabled={oauthPending !== null}
-            className="w-full border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)] disabled:opacity-60"
           >
             {oauthPending === "github" ? "Connecting to GitHub…" : "Continue with GitHub"}
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
+            variant="outline"
+            className="w-full"
+            size="lg"
             onClick={() => signInWithProvider("x")}
             disabled={oauthPending !== null}
-            className="w-full border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)] disabled:opacity-60"
           >
             {oauthPending === "x" ? "Connecting to X…" : "Continue with X"}
-          </button>
+          </Button>
 
           {displayedOauthError ? (
-            <p className="text-sm text-[var(--danger)]">{displayedOauthError}</p>
+            <Alert variant="destructive">
+              <AlertDescription>{displayedOauthError}</AlertDescription>
+            </Alert>
           ) : null}
 
-          <div className="flex items-center gap-3 py-2">
-            <div className="h-px flex-1 bg-[var(--line)]" />
-            <span className="text-xs text-[var(--muted)]">or continue with email</span>
-            <div className="h-px flex-1 bg-[var(--line)]" />
+          <div className="flex items-center gap-3 py-1">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">or continue with email</span>
+            <Separator className="flex-1" />
           </div>
         </div>
       ) : null}
 
       {mode === "signup" ? (
-        <label className="block text-sm">
-          Display name
-          <input
-            name="displayName"
-            required
-            minLength={2}
-            maxLength={80}
-            className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2 text-[var(--ink)]"
-          />
-        </label>
+        <div className="space-y-2">
+          <Label htmlFor="displayName">Display name</Label>
+          <Input id="displayName" name="displayName" required minLength={2} maxLength={80} />
+        </div>
       ) : null}
 
       {mode !== "password" ? (
-        <label className="block text-sm">
-          Email
-          <input
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2 text-[var(--ink)]"
-          />
-        </label>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" name="email" type="email" required autoComplete="email" />
+        </div>
       ) : null}
 
       {mode !== "reset" ? (
-        <label className="block text-sm">
-          Password
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
             name="password"
             type="password"
             required
             minLength={8}
             autoComplete={mode === "signin" ? "current-password" : "new-password"}
-            className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2 text-[var(--ink)]"
           />
-        </label>
+        </div>
       ) : null}
 
-      {state.error ? <p className="text-sm text-[var(--danger)]">{state.error}</p> : null}
-      {state.success ? <p className="text-sm text-[var(--ink)]">{state.success}</p> : null}
+      {state.error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
+      ) : null}
+      {state.success ? (
+        <Alert>
+          <AlertDescription>{state.success}</AlertDescription>
+        </Alert>
+      ) : null}
 
-      <button
-        type="submit"
-        disabled={pending || oauthPending !== null}
-        className="on-dark bg-[var(--ink)] px-4 py-2 text-sm disabled:opacity-60"
-      >
+      <Button type="submit" disabled={pending || oauthPending !== null} size="lg" className="w-full">
         {pending ? "Please wait…" : submitLabel}
-      </button>
+      </Button>
 
       {mode === "signin" ? (
-        <p className="text-sm text-[var(--muted)]">
-          <Link href="/register" className="underline">
+        <p className="text-sm text-muted-foreground">
+          <Link href="/register" className="text-[var(--accent)] underline-offset-4 hover:underline">
             Create an account
           </Link>
           {" · "}
-          <Link href="/forgot-password" className="underline">
+          <Link href="/forgot-password" className="text-[var(--accent)] underline-offset-4 hover:underline">
             Forgot password
           </Link>
         </p>
       ) : null}
 
       {mode === "signup" ? (
-        <p className="text-sm text-[var(--muted)]">
+        <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="underline">
+          <Link href="/login" className="text-[var(--accent)] underline-offset-4 hover:underline">
             Sign in
           </Link>
         </p>

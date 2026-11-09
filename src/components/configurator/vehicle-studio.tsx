@@ -20,17 +20,14 @@ import {
   type PublicVehicleConfig,
 } from "@/configurator/saved-config";
 import { photoFor } from "@/lib/editorial-media";
+import { VehicleStudioCanvasSkeleton } from "@/components/skeletons/vehicle-studio-canvas-skeleton";
 import { cn } from "@/lib/utils";
 
 const StudioExperience = dynamic(
   () => import("@/components/configurator/studio-experience").then((mod) => mod.StudioExperience),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-full items-center justify-center bg-[#d7d2c8] text-sm text-neutral-600">
-        Starting WebGL studio…
-      </div>
-    ),
+    loading: () => <VehicleStudioCanvasSkeleton />,
   },
 );
 
@@ -243,8 +240,8 @@ export function VehicleStudio({
             <ImageFallback src={photo.src} alt={photo.alt} credit={photo.credit} message="WebGL failed." onRetry={checkFile} />
           ) : null}
           {modelLoading && loadState === "ready" ? (
-            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[#d7d2c8]/80 text-sm text-[var(--ink)]">
-              Loading 3D model…
+            <div className="pointer-events-none absolute inset-0 z-10">
+              <VehicleStudioCanvasSkeleton />
             </div>
           ) : null}
           {loadState === "ready" ? (
