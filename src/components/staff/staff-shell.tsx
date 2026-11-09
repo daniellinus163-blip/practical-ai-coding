@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireStaff } from "@/crm/guard";
-import { EmptyState } from "@/components/catalog/empty-state";
+import { StaffConfigNotice } from "@/components/staff/staff-config-notice";
 
 export async function StaffShell({
   children,
@@ -35,12 +35,7 @@ export async function StaffShell({
           </Link>
         </nav>
       </header>
-      {!staff.serviceRole ? (
-        <EmptyState
-          title="Service role key missing"
-          body="CRM records stay on the server. Add SUPABASE_SERVICE_ROLE_KEY to .env.local (never NEXT_PUBLIC_) and restart. Roles are still checked against staff_members."
-        />
-      ) : null}
+      {!staff.serviceRole ? <StaffConfigNotice /> : null}
       {children}
     </div>
   );
