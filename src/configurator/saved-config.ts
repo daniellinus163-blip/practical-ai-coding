@@ -1,5 +1,7 @@
 import { cameraPresets, type CameraPresetId } from "@/components/configurator/camera-presets";
 import { paintSwatches } from "@/configurator/capabilities";
+import { exteriorPresetIds, type StudioViewMode } from "@/configurator/studio-camera";
+import { isWrapDesignId, type WrapDesignId } from "@/configurator/wrap-designs";
 import type { Vehicle3DAsset } from "@/configurator/types";
 
 export type StudioThemeId = "studio" | "dusk" | "showroom";
@@ -9,7 +11,9 @@ export const CONFIG_SCHEMA_VERSION = 1;
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const themes = new Set<StudioThemeId>(["studio", "dusk", "showroom"]);
 const cameras = new Set<string>(Object.keys(cameraPresets));
+const exteriorCameras = new Set<string>(exteriorPresetIds);
 const paintIds = new Set<string>(["original", ...paintSwatches.map((item) => item.id)]);
+const viewModes = new Set<StudioViewMode>(["exterior", "interior"]);
 
 export type PublicVehicleConfig = {
   schemaVersion: number;
@@ -22,6 +26,8 @@ export type PublicVehicleConfig = {
   theme: StudioThemeId;
   partColors: Record<string, string>;
   openPanels: Record<string, boolean>;
+  wrapId: WrapDesignId;
+  viewMode: StudioViewMode;
 };
 
 export function emptyPublicConfig(vehicleId: string, vehicleSlug: string): PublicVehicleConfig {
@@ -36,6 +42,8 @@ export function emptyPublicConfig(vehicleId: string, vehicleSlug: string): Publi
     theme: "studio",
     partColors: {},
     openPanels: {},
+    wrapId: "none",
+    viewMode: "exterior",
   };
 }
 
@@ -76,8 +84,20 @@ export function sanitizePublicConfig(
   const caliperId =
     typeof data.caliperId === "string" && paintIds.has(data.caliperId) ? data.caliperId : "original";
   const rimId = typeof data.rimId === "string" && paintIds.has(data.rimId) ? data.rimId : "original";
-  const preset =
+  const rawViewMode =
+    typeof data.viewMode === "string" && viewModes.has(data.viewMode as StudioViewMode)
+      ? (data.viewMode as StudioViewMode)
+      : null;
+  let preset =
     typeof data.preset === "string" && cameras.has(data.preset) ? (data.preset as CameraPresetId) : "threeQuarter";
+  const viewMode =
+    rawViewMode ??
+    (preset === "cabin" ? "interior" : "exterior");
+  if (viewMode === "interior") preset = "cabin";
+  else if (preset === "cabin" || !exteriorCameras.has(preset)) preset = "threeQuarter";
+
+  const wrapRaw = typeof data.wrapId === "string" ? data.wrapId : "none";
+  const wrapId = isWrapDesignId(wrapRaw) ? wrapRaw : "none";
   const theme =
     typeof data.theme === "string" && themes.has(data.theme as StudioThemeId)
       ? (data.theme as StudioThemeId)
@@ -98,6 +118,8 @@ export function sanitizePublicConfig(
     theme,
     partColors: paintSupported ? cleanHexMap(data.partColors, allowedPartIds) : {},
     openPanels: cleanPanelMap(data.openPanels),
+    wrapId: paintSupported ? wrapId : "none",
+    viewMode,
   };
 }
 
@@ -130,6 +152,8 @@ export function encodeShareParam(config: PublicVehicleConfig) {
     t: config.theme,
     pc: config.partColors,
     op: config.openPanels,
+    w: config.wrapId,
+    vm: config.viewMode,
   };
   return toBase64Url(JSON.stringify(publicOnly));
 }
@@ -157,6 +181,8 @@ export function expandSharePayload(raw: unknown) {
     theme: data.t,
     partColors: data.pc,
     openPanels: data.op,
+    wrapId: data.w,
+    viewMode: data.vm,
   };
 }
 

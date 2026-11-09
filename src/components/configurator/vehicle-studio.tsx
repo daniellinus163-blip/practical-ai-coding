@@ -8,7 +8,8 @@ import { StudioErrorBoundary } from "@/components/configurator/error-boundary";
 import type { StudioTheme } from "@/components/configurator/studio-experience";
 import { paintSwatches } from "@/configurator/capabilities";
 import { groupPartsForUi, type ColorablePart } from "@/configurator/part-groups";
-import type { PanelInfo } from "@/configurator/moving-panels";
+import { exteriorPresetIds, type StudioViewMode } from "@/configurator/studio-camera";
+import { wrapDesigns, type WrapDesignId } from "@/configurator/wrap-designs";
 import type { SceneInspection, Vehicle3DAsset } from "@/configurator/types";
 import { InquiryForm } from "@/components/account/inquiry-form";
 import { SaveBuildButton } from "@/components/account/save-build-button";
@@ -55,8 +56,11 @@ export function VehicleStudio({
   const [loadState, setLoadState] = useState<LoadState>("ready");
   const [modelLoading, setModelLoading] = useState(true);
   const [preset, setPreset] = useState<CameraPresetId>(restored?.preset ?? "threeQuarter");
+  const [viewMode, setViewMode] = useState<StudioViewMode>(restored?.viewMode ?? "exterior");
   const [theme, setTheme] = useState<StudioTheme>(restored?.theme ?? "studio");
   const [paintId, setPaintId] = useState<string>(restored?.paintId ?? "original");
+  const [wrapId, setWrapId] = useState<WrapDesignId>(restored?.wrapId ?? "none");
+  const [paintHexOverride, setPaintHexOverride] = useState<string | null>(null);
   const [caliperId, setCaliperId] = useState<string>(restored?.caliperId ?? "original");
   const [rimId, setRimId] = useState<string>(restored?.rimId ?? "original");
   const [inspection, setInspection] = useState<SceneInspection | null>(null);
@@ -66,9 +70,7 @@ export function VehicleStudio({
     calipers: [],
   });
   const [parts, setParts] = useState<ColorablePart[]>([]);
-  const [panels, setPanels] = useState<PanelInfo[]>([]);
   const [partColors, setPartColors] = useState<Record<string, string>>(restored?.partColors ?? {});
-  const [openPanels, setOpenPanels] = useState<Record<string, boolean>>(restored?.openPanels ?? {});
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const reducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotion, () => false);
   const [copied, setCopied] = useState(false);
@@ -110,20 +112,14 @@ export function VehicleStudio({
     [],
   );
   const onParts = useCallback((next: ColorablePart[]) => setParts(next), []);
-  const onPanels = useCallback((next: PanelInfo[]) => setPanels(next), []);
-
   const paintNames = detected.paint.length
     ? detected.paint
     : asset.capabilities.paint.materialNameIncludes.filter((n) => n !== "__detect__");
   const paint = paintSwatches.find((item) => item.id === paintId);
+  const bodyPaintHex = paintHexOverride ?? (paintId === "original" ? null : (paint?.hex ?? null));
   const caliper = paintSwatches.find((item) => item.id === caliperId);
   const rim = paintSwatches.find((item) => item.id === rimId);
 
-  const doors = panels.filter((panel) => panel.kind === "door");
-  const hood = panels.find((panel) => panel.kind === "hood");
-  const boot = panels.find((panel) => panel.kind === "boot");
-  const engine = panels.find((panel) => panel.kind === "engine");
-  const doorsOpen = doors.length > 0 && doors.every((door) => openPanels[door.id]);
   const selected = parts.find((part) => part.id === selectedPartId) ?? null;
 
   const partGroups = useMemo(() => groupPartsForUi(parts), [parts]);
@@ -131,29 +127,27 @@ export function VehicleStudio({
   const publicConfig = useMemo(
     () =>
       sanitizePublicConfig(
-        { paintId, caliperId, rimId, preset, theme, partColors, openPanels },
+        { paintId, caliperId, rimId, preset, theme, partColors, wrapId, viewMode },
         { id: vehicleId, slug: asset.vehicleSlug },
         asset,
         parts.length ? new Set(parts.map((part) => part.id)) : undefined,
       ),
-    [asset, caliperId, openPanels, paintId, partColors, parts, preset, rimId, theme, vehicleId],
+    [asset, caliperId, paintId, partColors, parts, preset, rimId, theme, vehicleId, viewMode, wrapId],
   );
 
   useEffect(() => {
     sessionStorage.setItem(liveConfigKey(asset.vehicleSlug), JSON.stringify(publicConfig));
   }, [asset.vehicleSlug, publicConfig]);
 
-  function setPanelOpen(id: string, open: boolean) {
-    setOpenPanels((current) => ({ ...current, [id]: open }));
+  function chooseViewMode(mode: StudioViewMode) {
+    setViewMode(mode);
+    if (mode === "interior") setPreset("cabin");
+    else if (preset === "cabin") setPreset("threeQuarter");
   }
 
-  function toggleAllDoors() {
-    const next = !doorsOpen;
-    setOpenPanels((current) => {
-      const copy = { ...current };
-      for (const door of doors) copy[door.id] = next;
-      return copy;
-    });
+  function chooseExteriorPreset(id: (typeof exteriorPresetIds)[number]) {
+    setViewMode("exterior");
+    setPreset(id);
   }
 
   function colorGroup(groupName: string, hex: string | null) {
@@ -180,19 +174,21 @@ export function VehicleStudio({
 
   function resetAll() {
     setPreset("threeQuarter");
+    setViewMode("exterior");
     setTheme("studio");
     setPaintId("original");
+    setPaintHexOverride(null);
+    setWrapId("none");
     setCaliperId("original");
     setRimId("original");
     setPartColors({});
-    setOpenPanels({});
     setSelectedPartId(null);
   }
 
   function saveLocal() {
     localStorage.setItem(
       `formshift-config-${asset.vehicleSlug}`,
-      JSON.stringify({ paintId, caliperId, rimId, preset, theme, partColors, openPanels }),
+      JSON.stringify({ paintId, caliperId, rimId, preset, theme, partColors, wrapId, viewMode }),
     );
   }
 
@@ -264,22 +260,22 @@ export function VehicleStudio({
                 <StudioExperience
                   glbUrl={asset.publicUrl}
                   vehicleSlug={asset.vehicleSlug}
-                  paintHex={paint?.hex ?? null}
+                  paintHex={bodyPaintHex}
                   paintMaterialNames={paintNames}
                   caliperHex={caliper?.hex ?? null}
                   caliperMaterialNames={detected.calipers}
                   rimHex={rim?.hex ?? null}
                   rimMaterialNames={detected.rims}
                   partColors={partColors}
-                  openPanels={openPanels}
+                  wrapId={wrapId}
                   selectedPartId={selectedPartId}
                   preset={preset}
+                  viewMode={viewMode}
                   theme={theme}
                   reducedMotion={reducedMotion}
                   onInspect={onInspect}
                   onMaterials={onMaterials}
                   onParts={onParts}
-                  onPanels={onPanels}
                   onPartClick={setSelectedPartId}
                 />
               </div>
@@ -291,94 +287,105 @@ export function VehicleStudio({
           <div className="shrink-0 border-b border-[var(--line)] px-4 py-3">
             <BackButton className="mb-2" />
             <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)]">Customization</p>
-            <p className="font-display text-xl">Colour &amp; panels</p>
+            <p className="font-display text-xl">Style &amp; views</p>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
             <div className="space-y-5">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">Doors &amp; lids</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">Exterior / interior</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  Interior view locks orbit inside the cabin on every model. Drag to look around — you will not exit the
+                  car.
+                </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={toggleAllDoors}
-                    disabled={doors.length === 0}
+                    onClick={() => chooseViewMode("exterior")}
                     className={cn(
                       "border px-3 py-2 text-xs uppercase tracking-[0.14em]",
-                      doors.length === 0
-                        ? "cursor-not-allowed border-[var(--line)] text-[var(--muted)]"
-                        : doorsOpen
-                          ? "on-dark border-[var(--ink)] bg-[var(--ink)]"
-                          : "on-dark border-[var(--accent)] bg-[var(--accent)]",
+                      viewMode === "exterior"
+                        ? "on-dark border-[var(--ink)] bg-[var(--ink)]"
+                        : "border-[var(--line)]",
                     )}
                   >
-                    {doors.length === 0 ? "Doors not separate" : doorsOpen ? "Close the doors" : "Open the doors"}
+                    Exterior
                   </button>
-                  {doors.map((door) => (
+                  <button
+                    type="button"
+                    onClick={() => chooseViewMode("interior")}
+                    className={cn(
+                      "border px-3 py-2 text-xs uppercase tracking-[0.14em]",
+                      viewMode === "interior"
+                        ? "on-dark border-[var(--accent)] bg-[var(--accent)]"
+                        : "border-[var(--line)]",
+                    )}
+                  >
+                    Interior
+                  </button>
+                </div>
+                {viewMode === "exterior" ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {exteriorPresetIds.map((id) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => chooseExteriorPreset(id)}
+                        className={cn(
+                          "border px-3 py-2 text-xs uppercase tracking-[0.14em]",
+                          preset === id ? "border-[var(--ink)]" : "border-[var(--line)]",
+                        )}
+                      >
+                        {cameraPresets[id].label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">Body colour</p>
+                <ColorRow
+                  hex={bodyPaintHex}
+                  onPick={(hex) => {
+                    const match = paintSwatches.find((item) => item.hex.toLowerCase() === hex.toLowerCase());
+                    if (match) {
+                      setPaintId(match.id);
+                      setPaintHexOverride(null);
+                    } else {
+                      setPaintHexOverride(hex);
+                    }
+                  }}
+                  onOriginal={() => {
+                    setPaintId("original");
+                    setPaintHexOverride(null);
+                  }}
+                />
+              </div>
+
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">Wrap livery</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">Game-style overlays on top of your base colour.</p>
+                <div className="mt-2 grid gap-2">
+                  {wrapDesigns.map((wrap) => (
                     <button
-                      key={door.id}
+                      key={wrap.id}
                       type="button"
-                      onClick={() => setPanelOpen(door.id, !openPanels[door.id])}
+                      onClick={() => setWrapId(wrap.id)}
                       className={cn(
-                        "border px-3 py-2 text-xs uppercase tracking-[0.14em]",
-                        openPanels[door.id] ? "border-[var(--ink)]" : "border-[var(--line)]",
+                        "border px-3 py-2 text-left text-xs",
+                        wrapId === wrap.id ? "border-[var(--ink)] bg-[var(--bg-2)]" : "border-[var(--line)]",
                       )}
                     >
-                      {openPanels[door.id] ? `Close ${door.label}` : `Open ${door.label}`}
+                      <span className="font-medium uppercase tracking-[0.12em]">{wrap.label}</span>
+                      <span className="mt-1 block text-[var(--muted)]">{wrap.description}</span>
                     </button>
                   ))}
-                  {hood ? (
-                    <button
-                      type="button"
-                      onClick={() => setPanelOpen(hood.id, !openPanels[hood.id])}
-                      className="border border-[var(--line)] px-3 py-2 text-xs uppercase tracking-[0.14em]"
-                    >
-                      {openPanels[hood.id] ? "Close the hood" : "Open the hood"}
-                    </button>
-                  ) : null}
-                  {boot ? (
-                    <button
-                      type="button"
-                      onClick={() => setPanelOpen(boot.id, !openPanels[boot.id])}
-                      className={cn(
-                        "border px-3 py-2 text-xs uppercase tracking-[0.14em]",
-                        openPanels[boot.id]
-                          ? "on-dark border-[var(--ink)] bg-[var(--ink)]"
-                          : "on-dark border-[var(--accent)] bg-[var(--accent)]",
-                      )}
-                    >
-                      {openPanels[boot.id] ? "Close the boot" : "Open the boot"}
-                    </button>
-                  ) : null}
-                  {engine ? (
-                    <button
-                      type="button"
-                      onClick={() => setPanelOpen(engine.id, !openPanels[engine.id])}
-                      className="border border-[var(--line)] px-3 py-2 text-xs uppercase tracking-[0.14em]"
-                    >
-                      {openPanels[engine.id] ? "Close the engine cover" : "Open the engine cover"}
-                    </button>
-                  ) : null}
                 </div>
               </div>
 
               <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">Camera &amp; studio</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">Studio lighting</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {Object.entries(cameraPresets).map(([id, value]) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => setPreset(id as CameraPresetId)}
-                      className={cn(
-                        "border px-3 py-2 text-xs uppercase tracking-[0.14em] transition",
-                        preset === id
-                          ? "on-dark border-[var(--ink)] bg-[var(--ink)]"
-                          : "border-[var(--line)] hover:border-[var(--accent)]",
-                      )}
-                    >
-                      {value.label}
-                    </button>
-                  ))}
                   {(Object.keys(themes) as StudioTheme[]).map((id) => (
                     <button
                       key={id}

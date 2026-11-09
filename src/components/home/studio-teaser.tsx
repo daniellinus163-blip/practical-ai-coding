@@ -66,6 +66,7 @@ export function StudioTeaser() {
         rimHex={null}
         rimMaterialNames={[]}
         preset="threeQuarter"
+        viewMode="exterior"
         theme="studio"
         reducedMotion={false}
         lite

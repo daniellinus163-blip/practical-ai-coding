@@ -1,10 +1,12 @@
 "use client";
 
 import { ContactShadows, Environment, OrbitControls, useGLTF } from "@react-three/drei";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject } from "react";
-import { Box3, Color, MathUtils, Vector3, type Mesh, type MeshStandardMaterial } from "three";
+import { Box3, Color, Vector3, type Mesh, type MeshStandardMaterial } from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { cameraPresets, type CameraPresetId } from "@/components/configurator/camera-presets";
+import { applyBodyWrap, stashOriginalMaps } from "@/configurator/apply-wrap";
 import { detectConfigurableMaterials } from "@/configurator/detect-materials";
 import {
   applyNamedMaterialColor,
@@ -13,8 +15,9 @@ import {
   stashOriginalColors,
 } from "@/configurator/inspect-scene";
 import { applyPartColors, catalogColorableParts, partIdFromObject, type ColorablePart } from "@/configurator/part-catalog";
-import { rigMovingPanels, type PanelHandle, type PanelInfo } from "@/configurator/moving-panels";
+import { interiorCameraFromBounds, type StudioCameraFrame, type StudioViewMode } from "@/configurator/studio-camera";
 import { alignNoseToPositiveZ } from "@/configurator/vehicle-facing";
+import type { WrapDesignId } from "@/configurator/wrap-designs";
 import type { SceneInspection } from "@/configurator/types";
 
 export type StudioTheme = "studio" | "dusk" | "showroom";
@@ -35,16 +38,17 @@ export function StudioExperience({
   rimHex,
   rimMaterialNames,
   partColors = {},
-  openPanels = {},
+  wrapId = "none",
   selectedPartId = null,
   preset,
+  viewMode,
   theme,
   reducedMotion,
   onInspect,
   onMaterials,
   onParts,
-  onPanels,
   onPartClick,
+  onInteriorFrame,
   lite = false,
 }: {
   glbUrl: string;
@@ -56,18 +60,24 @@ export function StudioExperience({
   rimHex: string | null;
   rimMaterialNames: string[];
   partColors?: Record<string, string>;
-  openPanels?: Record<string, boolean>;
+  wrapId?: WrapDesignId;
   selectedPartId?: string | null;
   preset: CameraPresetId;
+  viewMode: StudioViewMode;
   theme: StudioTheme;
   reducedMotion: boolean;
   onInspect: (report: SceneInspection) => void;
   onMaterials: (detected: { paint: string[]; rims: string[]; calipers: string[] }) => void;
   onParts?: (parts: ColorablePart[]) => void;
-  onPanels?: (panels: PanelInfo[]) => void;
   onPartClick?: (partId: string) => void;
+  onInteriorFrame?: (frame: StudioCameraFrame) => void;
   lite?: boolean;
 }) {
+  const interiorFrameRef = useRef<StudioCameraFrame>({
+    position: [...cameraPresets.cabin.position],
+    target: [...cameraPresets.cabin.target],
+  });
+
   return (
     <Canvas
       className="h-full w-full"
@@ -99,14 +109,16 @@ export function StudioExperience({
           rimHex={rimHex}
           rimMaterialNames={rimMaterialNames}
           partColors={partColors}
-          openPanels={openPanels}
+          wrapId={wrapId}
           selectedPartId={selectedPartId}
-          reducedMotion={reducedMotion}
           onInspect={onInspect}
           onMaterials={onMaterials}
           onParts={onParts}
-          onPanels={onPanels}
           onPartClick={onPartClick}
+          onInteriorFrame={(frame) => {
+            interiorFrameRef.current = frame;
+            onInteriorFrame?.(frame);
+          }}
           lite={lite}
         />
         {lite ? null : <Environment preset="studio" environmentIntensity={0.55} />}
@@ -116,14 +128,13 @@ export function StudioExperience({
         <meshStandardMaterial color={theme === "dusk" ? "#6f7380" : "#cfc8ba"} roughness={0.82} metalness={0.08} />
       </mesh>
       {lite ? null : <ContactShadows opacity={0.32} scale={11} blur={2.4} far={5} />}
-      <OrbitControls
-        makeDefault
-        enableDamping
-        minDistance={0.45}
-        maxDistance={16}
-        maxPolarAngle={Math.PI / 2.02}
+      <StudioOrbitControls viewMode={viewMode} />
+      <CameraPresetController
+        preset={preset}
+        viewMode={viewMode}
+        interiorFrameRef={interiorFrameRef}
+        reducedMotion={reducedMotion}
       />
-      <CameraPresetController preset={preset} reducedMotion={reducedMotion} />
     </Canvas>
   );
 }
@@ -137,14 +148,13 @@ function FittedVehicle({
   rimHex,
   rimMaterialNames,
   partColors,
-  openPanels,
+  wrapId,
   selectedPartId,
-  reducedMotion,
   onInspect,
   onMaterials,
   onParts,
-  onPanels,
   onPartClick,
+  onInteriorFrame,
   lite = false,
 }: {
   url: string;
@@ -155,14 +165,13 @@ function FittedVehicle({
   rimHex: string | null;
   rimMaterialNames: string[];
   partColors: Record<string, string>;
-  openPanels: Record<string, boolean>;
+  wrapId: WrapDesignId;
   selectedPartId: string | null;
-  reducedMotion: boolean;
   onInspect: (report: SceneInspection) => void;
   onMaterials: (detected: { paint: string[]; rims: string[]; calipers: string[] }) => void;
   onParts?: (parts: ColorablePart[]) => void;
-  onPanels?: (panels: PanelInfo[]) => void;
   onPartClick?: (partId: string) => void;
+  onInteriorFrame?: (frame: StudioCameraFrame) => void;
   lite?: boolean;
 }) {
   const gltf = useGLTF(url);
@@ -177,7 +186,10 @@ function FittedVehicle({
       if (Array.isArray(mesh.material)) mesh.material = mesh.material.map((material) => material.clone());
       else mesh.material = mesh.material.clone();
     });
-    if (!lite) stashOriginalColors(clone);
+    if (!lite) {
+      stashOriginalColors(clone);
+      stashOriginalMaps(clone);
+    }
     try {
       alignNoseToPositiveZ(clone);
     } catch {
@@ -192,29 +204,22 @@ function FittedVehicle({
     clone.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
     clone.updateMatrixWorld(true);
     const parts = lite ? [] : catalogColorableParts(clone);
-    let handles: PanelHandle[] = [];
-    if (!lite) {
-      try {
-        handles = rigMovingPanels(clone);
-      } catch {
-        handles = [];
-      }
-    }
-    return { clone, parts, handles };
+    const fittedBox = new Box3().setFromObject(clone);
+    const interiorFrame = interiorCameraFromBounds(fittedBox);
+    return { clone, parts, interiorFrame };
   }, [gltf.scene, lite]);
-  const clone = prepared.clone;
-  const handlesRef = useRef<PanelHandle[]>(prepared.handles);
 
   useLayoutEffect(() => {
-    handlesRef.current = prepared.handles;
-  }, [prepared.handles]);
+    onInteriorFrame?.(prepared.interiorFrame);
+  }, [onInteriorFrame, prepared.interiorFrame]);
+
+  const { clone } = prepared;
 
   useLayoutEffect(() => {
     onInspect(inspectScene(clone));
     onMaterials(detectConfigurableMaterials(clone));
     onParts?.(prepared.parts);
-    onPanels?.(prepared.handles.map(({ id, label, kind, side }) => ({ id, label, kind, side })));
-  }, [clone, prepared.parts, prepared.handles, onInspect, onMaterials, onParts, onPanels]);
+  }, [clone, prepared.parts, onInspect, onMaterials, onParts]);
 
   useLayoutEffect(() => {
     if (lite) return;
@@ -222,6 +227,7 @@ function FittedVehicle({
     if (paintHex && paintMaterialNames.length) {
       applyNamedMaterialColor(clone, paintMaterialNames, paintHex);
     }
+    applyBodyWrap(clone, paintMaterialNames, wrapId, paintHex);
     if (caliperHex && caliperMaterialNames.length) {
       applyNamedMaterialColor(clone, caliperMaterialNames, caliperHex);
     }
@@ -250,6 +256,7 @@ function FittedVehicle({
     clone,
     paintHex,
     paintMaterialNames,
+    wrapId,
     caliperHex,
     caliperMaterialNames,
     rimHex,
@@ -260,53 +267,61 @@ function FittedVehicle({
   ]);
 
   return (
-    <>
-      <primitive
-        object={clone}
-        onClick={(event: { stopPropagation: () => void; object: Mesh }) => {
-          event.stopPropagation();
-          const id = partIdFromObject(event.object);
-          if (id) onPartClick?.(id);
-        }}
-      />
-      <PanelAnimator handlesRef={handlesRef} openPanels={openPanels} reducedMotion={reducedMotion} />
-    </>
+    <primitive
+      object={clone}
+      onClick={(event: { stopPropagation: () => void; object: Mesh }) => {
+        event.stopPropagation();
+        const id = partIdFromObject(event.object);
+        if (id) onPartClick?.(id);
+      }}
+    />
   );
 }
 
-function PanelAnimator({
-  handlesRef,
-  openPanels,
-  reducedMotion,
-}: {
-  handlesRef: MutableRefObject<PanelHandle[]>;
-  openPanels: Record<string, boolean>;
-  reducedMotion: boolean;
-}) {
-  useFrame((_, delta) => {
-    const t = reducedMotion ? 1 : 1 - Math.exp(-delta * 6);
-    /* eslint-disable react-hooks/immutability -- Three.js pivot animation runs in useFrame, not React render. */
-    for (const handle of handlesRef.current) {
-      const target = openPanels[handle.id] ? handle.openAngle : handle.closedAngle;
-      const angle = MathUtils.lerp(handle.currentAngle, target, t);
-      handle.pivot.rotation.y = angle;
-      handle.currentAngle = angle;
+function StudioOrbitControls({ viewMode }: { viewMode: StudioViewMode }) {
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    if (viewMode === "interior") {
+      controls.minDistance = 0.06;
+      controls.maxDistance = 0.72;
+      controls.minPolarAngle = 0.82;
+      controls.maxPolarAngle = 1.42;
+      controls.enablePan = false;
+      controls.enableZoom = true;
+    } else {
+      controls.minDistance = 0.45;
+      controls.maxDistance = 16;
+      controls.minPolarAngle = 0.08;
+      controls.maxPolarAngle = Math.PI / 2.02;
+      controls.enablePan = true;
+      controls.enableZoom = true;
     }
-    /* eslint-enable react-hooks/immutability */
-  });
-  return null;
+    controls.update();
+  }, [viewMode]);
+
+  return <OrbitControls ref={controlsRef} makeDefault enableDamping dampingFactor={0.08} />;
 }
 
 function CameraPresetController({
   preset,
+  viewMode,
+  interiorFrameRef,
   reducedMotion,
 }: {
   preset: CameraPresetId;
+  viewMode: StudioViewMode;
+  interiorFrameRef: MutableRefObject<StudioCameraFrame>;
   reducedMotion: boolean;
 }) {
   const { camera, controls } = useThree();
+
   useEffect(() => {
-    const next = cameraPresets[preset];
+    const exteriorPreset = preset === "cabin" ? "threeQuarter" : preset;
+    const next =
+      viewMode === "interior" ? interiorFrameRef.current : cameraPresets[exteriorPreset];
     camera.position.set(...next.position);
     const orbit = controls as unknown as { target?: Vector3; update?: () => void } | null;
     if (orbit?.target) {
@@ -314,6 +329,7 @@ function CameraPresetController({
       orbit.update?.();
     }
     camera.updateProjectionMatrix();
-  }, [camera, controls, preset, reducedMotion]);
+  }, [camera, controls, interiorFrameRef, preset, reducedMotion, viewMode]);
+
   return null;
 }
