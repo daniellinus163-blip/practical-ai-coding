@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/catalog/empty-state";
 import { avatarPublicUrl, profileCompleteness } from "@/lib/profile";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
+import { countUnreadCustomerNotifications } from "@/lib/notifications";
 import { getStaffRole } from "@/lib/supabase/staff";
 
 export const metadata = { title: "Account" };
@@ -40,7 +41,7 @@ async function AccountBody() {
   if (!user) redirect("/login?next=/account");
 
   const supabase = await createServerSupabaseClient();
-  const [profileResult, buildsResult, inquiriesResult, role] = await Promise.all([
+  const [profileResult, buildsResult, inquiriesResult, role, inquiryUnread] = await Promise.all([
     supabase
       ? supabase
           .from("customer_profiles")
@@ -65,6 +66,7 @@ async function AccountBody() {
           .limit(4)
       : Promise.resolve({ data: [] as never[], error: null }),
     getStaffRole(),
+    supabase ? countUnreadCustomerNotifications(supabase, user.id) : Promise.resolve(0),
   ]);
 
   const displayName = profileResult.data?.display_name ?? "";
@@ -86,6 +88,7 @@ async function AccountBody() {
       email={user.email ?? ""}
       avatarUrl={avatarUrl}
       staffHref={role ? "/staff" : null}
+      inquiryUnreadCount={inquiryUnread}
     >
       <div className="space-y-8">
         <section className="grid gap-4 sm:grid-cols-3">

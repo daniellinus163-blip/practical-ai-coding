@@ -5,7 +5,9 @@ import { signOutAction } from "@/app/auth/actions";
 import { AuthAccountChip } from "@/components/auth/auth-account-chip";
 import { avatarPublicUrl } from "@/lib/profile";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { countUnreadCustomerNotifications } from "@/lib/notifications";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
+import { getStaffRole } from "@/lib/supabase/staff";
 
 async function AuthNavInner() {
   await connection();
@@ -26,16 +28,33 @@ async function AuthNavInner() {
   }
 
   const supabase = await createServerSupabaseClient();
-  const { data } = supabase
-    ? await supabase
-        .from("customer_profiles")
-        .select("display_name, avatar_path, updated_at")
-        .eq("id", user.id)
-        .maybeSingle()
-    : { data: null };
+  const [{ data }, unread, staffRole] = await Promise.all([
+    supabase
+      ? supabase
+          .from("customer_profiles")
+          .select("display_name, avatar_path, updated_at")
+          .eq("id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase ? countUnreadCustomerNotifications(supabase, user.id) : Promise.resolve(0),
+    getStaffRole(),
+  ]);
 
   return (
     <div className="flex items-center gap-3 text-sm">
+      <Link href="/account/inquiries" className="relative text-[var(--ink)] hover:text-[var(--brass)]">
+        Inquiries
+        {unread > 0 ? (
+          <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--ink)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--hero-text)]">
+            {unread > 9 ? "9+" : unread}
+          </span>
+        ) : null}
+      </Link>
+      {staffRole ? (
+        <Link href="/staff" className="text-[var(--ink)] hover:text-[var(--brass)]">
+          CRM
+        </Link>
+      ) : null}
       <AuthAccountChip
         displayName={data?.display_name ?? ""}
         email={user.email ?? ""}

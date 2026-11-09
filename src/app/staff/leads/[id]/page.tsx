@@ -149,6 +149,8 @@ async function LeadDetail({ params }: { params: Promise<{ id: string }> }) {
           )}
         </section>
 
+        {inquiry ? <CustomerFollowUpForm leadId={lead.id} customerEmail={lead.email} /> : null}
+
         <LeadIntegrationPanel
           leadId={lead.id}
           inquiryId={lead.inquiry_id}
@@ -177,7 +179,6 @@ async function LeadDetail({ params }: { params: Promise<{ id: string }> }) {
       </div>
 
       <aside className="space-y-6">
-        {inquiry ? <CustomerFollowUpForm leadId={lead.id} customerEmail={lead.email} /> : null}
         <StageForm leadId={lead.id} status={lead.status} version={lead.version} />
         <AssignForm leadId={lead.id} assignedTo={lead.assigned_to} version={lead.version} staff={directory} />
         <NoteForm leadId={lead.id} />

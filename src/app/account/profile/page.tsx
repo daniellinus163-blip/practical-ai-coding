@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/catalog/empty-state";
 import { avatarPublicUrl } from "@/lib/profile";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
+import { countUnreadCustomerNotifications } from "@/lib/notifications";
 import { getStaffRole } from "@/lib/supabase/staff";
 
 export const metadata = { title: "Profile" };
@@ -36,7 +37,7 @@ async function ProfileBody() {
   if (!user) redirect("/login?next=/account/profile");
 
   const supabase = await createServerSupabaseClient();
-  const [profileResult, role] = await Promise.all([
+  const [profileResult, role, inquiryUnread] = await Promise.all([
     supabase
       ? supabase
           .from("customer_profiles")
@@ -45,6 +46,7 @@ async function ProfileBody() {
           .maybeSingle()
       : Promise.resolve({ data: null, error: { message: "Client unavailable" } }),
     getStaffRole(),
+    supabase ? countUnreadCustomerNotifications(supabase, user.id) : Promise.resolve(0),
   ]);
 
   const preferred =
@@ -61,6 +63,7 @@ async function ProfileBody() {
       email={user.email ?? ""}
       avatarUrl={avatarUrl}
       staffHref={role ? "/staff" : null}
+      inquiryUnreadCount={inquiryUnread}
     >
       <div className="space-y-8">
         {profileResult.error ? <p className="text-sm text-[var(--danger)]">{profileResult.error.message}</p> : null}

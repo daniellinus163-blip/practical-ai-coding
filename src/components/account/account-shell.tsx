@@ -17,6 +17,7 @@ export function AccountShell({
   email,
   avatarUrl,
   staffHref,
+  inquiryUnreadCount = 0,
 }: {
   children: React.ReactNode;
   currentPath: string;
@@ -24,6 +25,7 @@ export function AccountShell({
   email: string;
   avatarUrl?: string | null;
   staffHref?: string | null;
+  inquiryUnreadCount?: number;
 }) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -62,6 +64,11 @@ export function AccountShell({
                 )}
               >
                 {link.label}
+                {link.href === "/account/inquiries" && inquiryUnreadCount > 0 ? (
+                  <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] text-white">
+                    {inquiryUnreadCount > 9 ? "9+" : inquiryUnreadCount}
+                  </span>
+                ) : null}
               </Link>
             );
           })}

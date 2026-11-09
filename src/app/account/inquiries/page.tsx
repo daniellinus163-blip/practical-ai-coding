@@ -88,6 +88,7 @@ async function MyInquiriesBody() {
       email={user.email ?? ""}
       avatarUrl={avatarPublicUrl(profileResult.data?.avatar_path, profileResult.data?.updated_at)}
       staffHref={role ? "/staff" : null}
+      inquiryUnreadCount={unreadCount}
     >
       {unreadCount > 0 ? (
         <p className="mb-4 rounded-md border border-[var(--line)] bg-[var(--card)] px-4 py-3 text-sm">
