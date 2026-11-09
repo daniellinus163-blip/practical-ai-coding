@@ -96,6 +96,49 @@ ${input.customerName ? `<p><strong>Contact:</strong> ${escapeHtml(input.customer
   return { subject, text, html };
 }
 
+export function staffReplyEmail(input: {
+  name: string;
+  vehicleSlug: string | null;
+  siteUrl: string;
+  inquiryId?: string | null;
+  message: string;
+}) {
+  const site = input.siteUrl.replace(/\/$/, "") || getEmailSiteUrl() || "";
+  const vehicle = vehicleLabel(input.vehicleSlug);
+  const ref = referenceLine(input.inquiryId ?? null);
+  const subject = ref ? `${ref} — message from FormShift AI` : "A message from FormShift AI about your inquiry";
+  const plainMessage = input.message.trim();
+
+  const text = [
+    `Hello ${input.name},`,
+    "",
+    plainMessage,
+    "",
+    ref,
+    `Vehicle: ${vehicle}`,
+    "",
+    "Sign in to view this reply in your account:",
+    `${site}/account/inquiries`,
+    "",
+    "This is a direct response to your inquiry — not marketing.",
+    "FormShift AI",
+  ].join("\n");
+
+  const html = brandedEmailHtml({
+    siteUrl: site,
+    preview: "FormShift AI replied to your inquiry.",
+    headline: "Message from our team",
+    bodyHtml: `<p>Hello ${escapeHtml(input.name)},</p>
+<p>Our team replied regarding your inquiry about <strong>${escapeHtml(vehicle)}</strong>:</p>
+<div style="margin:16px 0;padding:16px;background:#f4efe6;border-radius:8px;white-space:pre-wrap;font-size:14px;line-height:1.5;">${escapeHtml(plainMessage)}</div>
+${ref ? `<p style="font-size:12px;color:#6b6458;">${escapeHtml(ref)}</p>` : ""}`,
+    cta: { label: "View in your account", href: `${site}/account/inquiries` },
+    footnote: "Reply to this email if your mail client allows — we use a verified domain when configured.",
+  });
+
+  return { subject, text, html };
+}
+
 export function followUpEmail(input: {
   name: string;
   vehicleSlug: string | null;

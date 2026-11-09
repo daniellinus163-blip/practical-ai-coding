@@ -119,7 +119,20 @@ export function createInternalStore(admin: SupabaseClient) {
   };
 }
 
+async function loadStaffReplyBody(
+  admin: SupabaseClient,
+  event: AutomationEvent,
+): Promise<string | null> {
+  const activityId =
+    typeof event.payload.activity_id === "string" ? event.payload.activity_id : null;
+  if (!activityId) return null;
+  const { data } = await admin.from("lead_activities").select("body").eq("id", activityId).maybeSingle();
+  return data?.body ?? null;
+}
+
 async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promise<ContactContext> {
+  const staffReplyBody =
+    event.event_type === "inquiry.staff_reply" ? await loadStaffReplyBody(admin, event) : null;
   const leadId =
     event.lead_id || (typeof event.payload.lead_id === "string" ? event.payload.lead_id : null);
   const inquiryId =
@@ -140,6 +153,7 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
         vehicleSlug: data.vehicle_slug ?? null,
         leadStatus: data.status ?? null,
         message,
+        staffReplyBody,
       };
     }
   }
@@ -158,6 +172,7 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
         vehicleSlug: data.vehicle_slug ?? null,
         leadStatus: "new",
         message: data.message ?? null,
+        staffReplyBody,
       };
     }
   }
@@ -169,6 +184,7 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
     vehicleSlug: typeof event.payload.vehicle_slug === "string" ? event.payload.vehicle_slug : null,
     leadStatus: typeof event.payload.to_status === "string" ? event.payload.to_status : null,
     message: null,
+    staffReplyBody,
   };
 }
 

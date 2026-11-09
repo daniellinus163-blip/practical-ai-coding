@@ -9,6 +9,7 @@ import { SetupNotice } from "@/components/auth/setup-notice";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
+import { InquiryNotifications } from "@/components/account/inquiry-notifications";
 import { avatarPublicUrl } from "@/lib/profile";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
@@ -39,7 +40,7 @@ async function MyInquiriesBody() {
   if (!user) redirect("/login?next=/account/inquiries");
 
   const supabase = await createServerSupabaseClient();
-  const [rowsResult, profileResult, role] = await Promise.all([
+  const [rowsResult, profileResult, role, notificationsResult] = await Promise.all([
     supabase
       ? supabase
           .from("inquiries")
@@ -55,9 +56,26 @@ async function MyInquiriesBody() {
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     getStaffRole(),
+    supabase
+      ? supabase
+          .from("customer_notifications")
+          .select("id, inquiry_id, title, body, read_at, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
   const rows = rowsResult.data ?? [];
+  const notifications = notificationsResult.data ?? [];
+  const notificationsByInquiry = new Map<string, typeof notifications>();
+  for (const note of notifications) {
+    if (!note.inquiry_id) continue;
+    const list = notificationsByInquiry.get(note.inquiry_id) ?? [];
+    list.push(note);
+    notificationsByInquiry.set(note.inquiry_id, list);
+  }
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
   const vehicles = await catalogRepository.getVehiclesBySlugs(
     rows.map((row) => row.vehicle_slug).filter((slug): slug is string => Boolean(slug)),
   );
@@ -71,6 +89,12 @@ async function MyInquiriesBody() {
       avatarUrl={avatarPublicUrl(profileResult.data?.avatar_path, profileResult.data?.updated_at)}
       staffHref={role ? "/staff" : null}
     >
+      {unreadCount > 0 ? (
+        <p className="mb-4 rounded-md border border-[var(--line)] bg-[var(--card)] px-4 py-3 text-sm">
+          You have <strong>{unreadCount}</strong> new{" "}
+          {unreadCount === 1 ? "reply" : "replies"} from the FormShift team below.
+        </p>
+      ) : null}
       {rowsResult.error ? <p className="text-sm text-[var(--danger)]">{rowsResult.error.message}</p> : null}
       {rows.length === 0 ? (
         <EmptyState
@@ -95,6 +119,7 @@ async function MyInquiriesBody() {
                   <p className="text-xs text-muted-foreground">{formatSubmitted(row.created_at)}</p>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  <InquiryNotifications inquiryId={row.id} items={notificationsByInquiry.get(row.id) ?? []} />
                   <p className="text-sm leading-relaxed">{row.message}</p>
                   {row.vehicle_slug ? (
                     <Link href={`/cars/${row.vehicle_slug}`} className={buttonVariants({ variant: "outline", size: "sm" })}>

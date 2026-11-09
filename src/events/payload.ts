@@ -63,6 +63,11 @@ export function validateEventPayload(type: EventType, payload: SafePayload): str
     case "follow_up.reminder":
       if (!asUuid(payload.lead_id) || !asUuid(payload.inquiry_id)) return "follow_up.reminder needs lead_id and inquiry_id";
       return null;
+    case "inquiry.staff_reply":
+      if (!asUuid(payload.lead_id) || !asUuid(payload.inquiry_id) || !asUuid(payload.activity_id)) {
+        return "inquiry.staff_reply needs lead_id, inquiry_id, and activity_id";
+      }
+      return null;
     case "integration.delivery_failed":
       if (!asUuid(payload.failed_event_id) || typeof payload.integration !== "string") {
         return "integration.delivery_failed needs failed_event_id and integration";

@@ -81,6 +81,8 @@ export function integrationsFor(type: string): Array<"internal" | "n8n" | "hubsp
   switch (type) {
     case "inquiry.received":
       return ["resend_staff", "internal", "hubspot", "resend"];
+    case "inquiry.staff_reply":
+      return ["resend"];
     case "lead.stage_changed":
       return ["hubspot"];
     case "follow_up.reminder":

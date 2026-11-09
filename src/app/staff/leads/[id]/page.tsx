@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { completeTaskAction } from "@/app/staff/actions";
 import { catalogRepository } from "@/catalog/local-repository";
-import { AssignForm, NoteForm, StageForm, TaskForm } from "@/components/staff/lead-forms";
+import { AssignForm, CustomerFollowUpForm, NoteForm, StageForm, TaskForm } from "@/components/staff/lead-forms";
 import { listStaffDirectory, requireStaff } from "@/crm/guard";
 import { isPipelineStage, STAGE_LABELS } from "@/crm/stages";
 import { EmptyState } from "@/components/catalog/empty-state";
@@ -177,6 +177,7 @@ async function LeadDetail({ params }: { params: Promise<{ id: string }> }) {
       </div>
 
       <aside className="space-y-6">
+        {inquiry ? <CustomerFollowUpForm leadId={lead.id} customerEmail={lead.email} /> : null}
         <StageForm leadId={lead.id} status={lead.status} version={lead.version} />
         <AssignForm leadId={lead.id} assignedTo={lead.assigned_to} version={lead.version} staff={directory} />
         <NoteForm leadId={lead.id} />

@@ -1,4 +1,4 @@
-import { followUpEmail, inquiryConfirmationEmail, internalInquiryEmail } from "@/events/emails";
+import { followUpEmail, inquiryConfirmationEmail, internalInquiryEmail, staffReplyEmail } from "@/events/emails";
 import type { IntegrationConfig } from "@/events/config";
 import { networkFailure, resultFromHttp } from "@/events/http";
 import { validateEventPayload } from "@/events/payload";
@@ -86,6 +86,22 @@ export function createAdapters(options: {
           vehicleSlug: contact.vehicleSlug,
           siteUrl: config.siteUrl,
           inquiryId: contact.inquiryId,
+        }),
+      );
+    }
+    if (event.event_type === "inquiry.staff_reply") {
+      const body = contact.staffReplyBody?.trim();
+      if (!body) return { status: "failed", retryable: false, error: "staff_reply_body_missing" };
+      return sendResend(
+        fetchImpl,
+        config,
+        contact.email,
+        staffReplyEmail({
+          name: contact.name || "there",
+          vehicleSlug: contact.vehicleSlug,
+          siteUrl: config.siteUrl,
+          inquiryId: contact.inquiryId,
+          message: body,
         }),
       );
     }

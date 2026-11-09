@@ -5,6 +5,7 @@ import {
   addLeadNoteAction,
   assignLeadAction,
   createTaskAction,
+  sendCustomerFollowUpAction,
   updateLeadStageAction,
 } from "@/app/staff/actions";
 import { PIPELINE_STAGES, STAGE_LABELS, type PipelineStage } from "@/crm/stages";
@@ -135,6 +136,41 @@ export function TaskForm({ leadId, staff }: { leadId: string; staff: StaffOption
       <Feedback error={state.error} success={state.success} />
       <button type="submit" disabled={pending} className="border border-[var(--line)] px-3 py-2 text-sm disabled:opacity-60">
         {pending ? "Saving…" : "Add task"}
+      </button>
+    </form>
+  );
+}
+
+export function CustomerFollowUpForm({ leadId, customerEmail }: { leadId: string; customerEmail: string }) {
+  const [state, action, pending] = useActionState(sendCustomerFollowUpAction, { error: null, success: null });
+  return (
+    <form action={action} className="space-y-3 border border-[var(--line)] bg-[var(--card)] p-4">
+      <div>
+        <h3 className="font-display text-lg">Reply to customer</h3>
+        <p className="mt-1 text-xs text-[var(--muted)]">
+          Sends to <span className="font-mono">{customerEmail}</span> and shows in their account when they signed in.
+        </p>
+      </div>
+      <input type="hidden" name="leadId" value={leadId} />
+      <label className="block text-sm">
+        Your message
+        <textarea
+          name="body"
+          required
+          minLength={10}
+          maxLength={4000}
+          rows={5}
+          className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2 text-sm"
+          placeholder="Thank you for your inquiry. Here is what we can offer…"
+        />
+      </label>
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="confirm" value="yes" required className="mt-1" />
+        I confirm this message goes to the customer by email and in-app notification.
+      </label>
+      <Feedback error={state.error} success={state.success} />
+      <button type="submit" disabled={pending} className="on-dark bg-[var(--ink)] px-3 py-2 text-sm disabled:opacity-60">
+        {pending ? "Sending…" : "Send follow-up"}
       </button>
     </form>
   );

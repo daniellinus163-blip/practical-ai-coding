@@ -1,5 +1,6 @@
 export const EVENT_TYPES = [
   "inquiry.received",
+  "inquiry.staff_reply",
   "configuration.saved",
   "lead.stage_changed",
   "follow_up.reminder",
@@ -57,4 +58,5 @@ export type ContactContext = {
   vehicleSlug: string | null;
   leadStatus: string | null;
   message: string | null;
+  staffReplyBody: string | null;
 };
