@@ -1,12 +1,12 @@
+import { connection } from "next/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_NEXT_COOKIE, getRequestOrigin } from "@/lib/supabase/auth-redirect";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createRouteHandlerSupabaseClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/validation";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(request: NextRequest) {
+  await connection();
   const requestUrl = new URL(request.url);
   const origin = getRequestOrigin(request);
   const code = requestUrl.searchParams.get("code");

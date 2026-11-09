@@ -1,11 +1,11 @@
+import { connection } from "next/server";
 import { loadIntegrationConfig } from "@/events/config";
 import { sanitizePayload } from "@/events/payload";
 import { verifySignature } from "@/events/signature";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
-export const dynamic = "force-dynamic";
-
 export async function POST(request: Request) {
+  await connection();
   const config = loadIntegrationConfig();
   const raw = await request.text();
   if (!config.webhookSecret || !verifySignature(config.webhookSecret, raw, request.headers.get("x-formshift-signature"))) {
