@@ -56,7 +56,7 @@ export async function loadLeadIntegrationView(
     admin
       .from("automation_events")
       .select("id, event_type, status, attempt_count, last_error, created_at, completed_at, next_attempt_at")
-      .in("event_type", ["lead.stage_changed", "follow_up.reminder"])
+      .in("event_type", ["lead.stage_changed", "follow_up.reminder", "inquiry.staff_reply"])
       .contains("payload", { lead_id: input.leadId })
       .order("created_at", { ascending: true }),
   ]);

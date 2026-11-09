@@ -77,6 +77,8 @@ function eventTitle(event: AutomationEventRow): string {
       return "Pipeline stage sync";
     case "follow_up.reminder":
       return "24-hour follow-up";
+    case "inquiry.staff_reply":
+      return "Staff reply to customer";
     default:
       return event.event_type;
   }
