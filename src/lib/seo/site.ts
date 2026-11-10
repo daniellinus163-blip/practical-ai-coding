@@ -15,9 +15,11 @@ export function getMetadataBase(): URL {
   return new URL(`${getPublicSiteOrigin()}/`);
 }
 
-export function getGoogleSiteVerification(): string | undefined {
-  const raw = process.env.GOOGLE_SITE_VERIFICATION?.trim();
-  return raw || undefined;
+/** Public HTML-tag token from Google Search Console (visible in page source after deploy). */
+export const GOOGLE_SITE_VERIFICATION_CODE = "CrjjGb7zXqJXIsvcK70HtFqRBAOVLfrrsi4Hb1ycdCA";
+
+export function getGoogleSiteVerification(): string {
+  return process.env.GOOGLE_SITE_VERIFICATION?.trim() || GOOGLE_SITE_VERIFICATION_CODE;
 }
 
 export const SITE_NAME = "FormShift AI";

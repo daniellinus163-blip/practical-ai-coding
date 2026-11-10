@@ -24,8 +24,6 @@ const fraunces = Fraunces({
 /** Allow HubSpot + Resend to finish during inquiry submit on Vercel. */
 export const maxDuration = 60;
 
-const googleVerification = getGoogleSiteVerification();
-
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
   title: {
@@ -55,13 +53,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
   },
-  ...(googleVerification
-    ? {
-        verification: {
-          google: googleVerification,
-        },
-      }
-    : {}),
+  verification: {
+    google: getGoogleSiteVerification(),
+  },
 };
 
 export const viewport: Viewport = {
