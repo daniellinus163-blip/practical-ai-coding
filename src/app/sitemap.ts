@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next";
 import { catalogRepository } from "@/catalog/local-repository";
-import { getPublicSiteOrigin } from "@/lib/seo/site";
+import { getRequestSiteOrigin } from "@/lib/seo/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const origin = getPublicSiteOrigin();
+  const origin = await getRequestSiteOrigin();
   const now = new Date();
   const vehicles = await catalogRepository.listVehicles();
 

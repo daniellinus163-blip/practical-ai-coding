@@ -1,14 +1,28 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { getSiteUrl, isLocalhostUrl } from "@/lib/supabase/env";
 
-/** Production canonical origin for metadata, sitemap, and robots (trailing slash omitted). */
+const PRODUCTION_FALLBACK_ORIGIN = "https://practical-ai-coding-zh1z.vercel.app";
+
+/** Configured canonical origin (trailing slash omitted). */
 export function getPublicSiteOrigin() {
   const configured = getSiteUrl().replace(/\/$/, "");
   if (configured && !isLocalhostUrl(configured)) return configured;
   if (process.env.NODE_ENV === "production") {
-    return "https://practical-ai-coding-zh1z.vercel.app";
+    return PRODUCTION_FALLBACK_ORIGIN;
   }
   return configured || "http://localhost:3000";
+}
+
+/** Prefer the live request host so sitemap/robots match the Search Console property URL. */
+export async function getRequestSiteOrigin() {
+  const h = await headers();
+  const host = h.get("x-forwarded-host")?.split(",")[0]?.trim() || h.get("host");
+  const proto = h.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+  if (host && !host.includes("localhost") && !host.startsWith("127.0.0.1")) {
+    return `${proto}://${host}`;
+  }
+  return getPublicSiteOrigin();
 }
 
 export function getMetadataBase(): URL {
