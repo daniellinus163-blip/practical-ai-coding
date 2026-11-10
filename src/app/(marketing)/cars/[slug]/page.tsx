@@ -17,6 +17,7 @@ import {
 } from "@/configurator/saved-config";
 import { VehiclePageSkeleton } from "@/components/skeletons/vehicle-page-skeleton";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
+import { getPublicSiteOrigin } from "@/lib/seo/site";
 
 export async function generateStaticParams() {
   const vehicles = await catalogRepository.listVehicles();
@@ -27,7 +28,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const vehicle = await catalogRepository.getVehicleBySlug(slug);
   if (!vehicle) return { title: "Vehicle" };
-  return { title: `${vehicle.brand.name} ${vehicle.model}` };
+  const title = `${vehicle.brand.name} ${vehicle.model} — 3D configurator`;
+  const description = `Configure the ${vehicle.brand.name} ${vehicle.model} in FormShift AI’s interactive 3D studio. Explore colours, trim, and options, then send a configuration-backed inquiry.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/cars/${slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `${getPublicSiteOrigin()}/cars/${slug}`,
+      type: "website",
+    },
+  };
 }
 
 export default function VehiclePage({

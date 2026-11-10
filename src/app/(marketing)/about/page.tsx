@@ -1,4 +1,9 @@
-export const metadata = { title: "About" };
+export const metadata = {
+  title: "About FormShift AI",
+  description:
+    "FormShift AI is an independent automotive technology platform for vehicle discovery and interactive 3D configuration — not a dealer or official manufacturer site.",
+  alternates: { canonical: "/about" },
+};
 
 export default function AboutPage() {
   return (

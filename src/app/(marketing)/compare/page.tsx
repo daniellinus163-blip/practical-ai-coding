@@ -8,7 +8,10 @@ import { COMPARE_LIMIT } from "@/catalog/query";
 import { parseCompareParam } from "@/catalog/url";
 
 export const metadata = {
-  title: "Compare",
+  title: "Compare vehicles",
+  description:
+    "Side-by-side specification comparison for vehicles in the FormShift AI catalog. Open any model’s 3D configurator from your shortlist.",
+  alternates: { canonical: "/compare" },
 };
 
 export default function ComparePage({

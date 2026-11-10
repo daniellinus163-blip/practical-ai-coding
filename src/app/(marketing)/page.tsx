@@ -1,11 +1,30 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { DEFAULT_DESCRIPTION, publicOpenGraph, publicTwitter, SITE_NAME } from "@/lib/seo/site";
 import { VehicleCard } from "@/components/catalog/vehicle-card";
 import { HomeMotion } from "@/components/home/home-motion";
 import { StudioTeaser } from "@/components/home/studio-teaser";
 import { catalogRepository } from "@/catalog/local-repository";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: `${SITE_NAME} — 3D car configurator & interactive vehicle customization`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: publicOpenGraph({
+    title: `${SITE_NAME} — 3D car configurator & vehicle discovery`,
+    description: DEFAULT_DESCRIPTION,
+    path: "/",
+  }),
+  twitter: publicTwitter({
+    title: `${SITE_NAME} — online 3D vehicle configurator`,
+    description: DEFAULT_DESCRIPTION,
+  }),
+};
 
 export default async function Home() {
   const vehicles = await catalogRepository.listVehicles();

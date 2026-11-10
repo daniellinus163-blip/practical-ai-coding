@@ -2,7 +2,7 @@ import { updatePasswordAction } from "@/app/auth/actions";
 import { CredentialsForm } from "@/components/auth/credentials-form";
 import { SetupNotice } from "@/components/auth/setup-notice";
 
-export const metadata = { title: "New password" };
+export const metadata = { title: "New password", robots: { index: false, follow: false } };
 
 export default function UpdatePasswordPage() {
   return (

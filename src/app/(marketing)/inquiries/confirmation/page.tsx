@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getAuthUser, createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
-export const metadata = { title: "Inquiry received" };
+export const metadata = { title: "Inquiry received", robots: { index: false, follow: false } };
 
 export default function InquiryConfirmationPage({
   searchParams,

@@ -10,7 +10,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
 import { getStaffRole } from "@/lib/supabase/staff";
 
-export const metadata = { title: "My Builds" };
+export const metadata = { title: "My Builds", robots: { index: false, follow: false } };
 
 export default function MyBuildsPage() {
   return (

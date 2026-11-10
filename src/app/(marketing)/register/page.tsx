@@ -3,7 +3,7 @@ import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { CredentialsForm } from "@/components/auth/credentials-form";
 import { SetupNotice } from "@/components/auth/setup-notice";
 
-export const metadata = { title: "Create account" };
+export const metadata = { title: "Create account", robots: { index: false, follow: false } };
 
 export default function RegisterPage() {
   return (

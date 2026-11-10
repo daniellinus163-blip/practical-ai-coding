@@ -6,7 +6,7 @@ import { SetupNotice } from "@/components/auth/setup-notice";
 import { Skeleton } from "@/components/ui/skeleton";
 import { safeNextPath } from "@/lib/validation";
 
-export const metadata = { title: "Sign in" };
+export const metadata = { title: "Sign in", robots: { index: false, follow: false } };
 
 export default function LoginPage({
   searchParams,

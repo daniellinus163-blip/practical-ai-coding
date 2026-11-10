@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Not authorised" };
+export const metadata = { title: "Not authorised", robots: { index: false, follow: false } };
 
 export default function StaffDeniedPage() {
   return (

@@ -3,7 +3,7 @@ import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { CredentialsForm } from "@/components/auth/credentials-form";
 import { SetupNotice } from "@/components/auth/setup-notice";
 
-export const metadata = { title: "Reset password" };
+export const metadata = { title: "Reset password", robots: { index: false, follow: false } };
 
 export default function ForgotPasswordPage() {
   return (
