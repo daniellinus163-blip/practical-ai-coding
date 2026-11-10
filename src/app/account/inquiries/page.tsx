@@ -9,7 +9,10 @@ import { SetupNotice } from "@/components/auth/setup-notice";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
+import { buildConfigurationDetails } from "@/crm/configuration-summary";
+import { LeadConfigurationPanel } from "@/components/staff/lead-configuration-panel";
 import { InquiryNotifications } from "@/components/account/inquiry-notifications";
+import { InquiryReplyForm } from "@/components/account/inquiry-reply-form";
 import { avatarPublicUrl } from "@/lib/profile";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createServerSupabaseClient, getAuthUser } from "@/lib/supabase/server";
@@ -44,7 +47,7 @@ async function MyInquiriesBody() {
     supabase
       ? supabase
           .from("inquiries")
-          .select("id, vehicle_slug, message, status, created_at")
+          .select("id, vehicle_slug, message, status, created_at, configuration_snapshot, configuration_id")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: null, error: { message: "Client unavailable" } }),
@@ -104,7 +107,18 @@ async function MyInquiriesBody() {
         />
       ) : (
         <ul className="space-y-4">
-          {rows.map((row) => (
+          {rows.map((row) => {
+            const vehicle = row.vehicle_slug ? vehicles.find((v) => v.slug === row.vehicle_slug) ?? null : null;
+            const configRows = vehicle
+              ? buildConfigurationDetails({
+                  snapshot: row.configuration_snapshot,
+                  vehicle,
+                  savedConfigurationName: null,
+                  savedConfigurationId: row.configuration_id,
+                  defaultTrimName: vehicle.configurations.find((c) => c.isDefault)?.name ?? null,
+                })
+              : [];
+            return (
             <li key={row.id}>
               <Card>
                 <CardHeader className="pb-2">
@@ -122,15 +136,32 @@ async function MyInquiriesBody() {
                 <CardContent className="space-y-3">
                   <InquiryNotifications inquiryId={row.id} items={notificationsByInquiry.get(row.id) ?? []} />
                   <p className="text-sm leading-relaxed">{row.message}</p>
-                  {row.vehicle_slug ? (
-                    <Link href={`/cars/${row.vehicle_slug}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                      Open vehicle
-                    </Link>
+                  <InquiryReplyForm inquiryId={row.id} />
+                  {configRows.length > 0 ? (
+                    <LeadConfigurationPanel
+                      rows={configRows}
+                      vehicleHref={row.vehicle_slug ? `/cars/${row.vehicle_slug}` : null}
+                      previewNote={null}
+                    />
                   ) : null}
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/inquiries/confirmation?ref=${encodeURIComponent(row.id)}`}
+                      className={buttonVariants({ variant: "outline", size: "sm" })}
+                    >
+                      Confirmation page
+                    </Link>
+                    {row.vehicle_slug ? (
+                      <Link href={`/cars/${row.vehicle_slug}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                        Open vehicle
+                      </Link>
+                    ) : null}
+                  </div>
                 </CardContent>
               </Card>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </AccountShell>

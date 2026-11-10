@@ -17,7 +17,6 @@ export type CommandCenterStats = {
 
 export async function loadCommandCenterStats(admin: SupabaseClient): Promise<CommandCenterStats> {
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const nowIso = now.toISOString();
 
@@ -46,7 +45,7 @@ export async function loadCommandCenterStats(admin: SupabaseClient): Promise<Com
       .from("lead_tasks")
       .select("id", { count: "exact", head: true })
       .is("completed_at", null)
-      .lte("due_at", today),
+      .lt("due_at", nowIso),
     admin.from("inquiries").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
     admin.from("automation_events").select("id", { count: "exact", head: true }).eq("status", "queued"),
     admin.from("automation_events").select("id", { count: "exact", head: true }).eq("status", "processing"),

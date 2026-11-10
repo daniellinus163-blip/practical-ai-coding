@@ -1,3 +1,8 @@
+import {
+  notifyFollowUpDue,
+  notifyIntegrationDeliveryFailure,
+  notifyWorkerEventFailure,
+} from "@/crm/staff-notifications";
 import { integrationsFor, type IntegrationConfig } from "@/events/config";
 import { integrationLog } from "@/events/log";
 import { sanitizePayload, validateEventPayload } from "@/events/payload";
@@ -97,6 +102,19 @@ export async function processOneEvent(input: {
       last_error: result.error ?? null,
       external_id: result.externalId ?? null,
     });
+
+    if (result.status === "failed" && !result.retryable) {
+      const leadId = typeof event.payload.lead_id === "string" ? event.payload.lead_id : event.lead_id;
+      const inquiryId = typeof event.payload.inquiry_id === "string" ? event.payload.inquiry_id : event.entity_id;
+      void notifyIntegrationDeliveryFailure({
+        integration,
+        eventId: event.id,
+        eventType: event.event_type,
+        leadId: leadId ?? null,
+        inquiryId: inquiryId ?? null,
+        error: result.error,
+      }).catch(() => {});
+    }
   }
 
   const retryable = outcomes.filter((row) => row.status === "failed" && row.retryable);
@@ -106,6 +124,18 @@ export async function processOneEvent(input: {
   if (pendingWork) {
     const nextStatus = event.attempt_count >= event.max_attempts ? "dead" : "failed";
     await input.store.complete(event.id, nextStatus, retryable[0]?.last_error ?? "retryable_failure");
+    if (nextStatus === "dead") {
+      const leadId = typeof event.payload.lead_id === "string" ? event.payload.lead_id : event.lead_id;
+      const inquiryId = typeof event.payload.inquiry_id === "string" ? event.payload.inquiry_id : event.entity_id;
+      void notifyWorkerEventFailure({
+        eventId: event.id,
+        eventType: event.event_type,
+        leadId: leadId ?? null,
+        inquiryId: inquiryId ?? null,
+        error: retryable[0]?.last_error ?? null,
+        status: "dead",
+      }).catch(() => {});
+    }
     return;
   }
 
@@ -128,8 +158,32 @@ export async function processOneEvent(input: {
   const allOk = outcomes.every((row) => row.status === "succeeded" || row.status === "skipped");
   if (allOk) {
     await input.store.complete(event.id, "succeeded", null);
+    if (event.event_type === "follow_up.reminder") {
+      const leadId = typeof event.payload.lead_id === "string" ? event.payload.lead_id : event.lead_id;
+      const inquiryId = typeof event.payload.inquiry_id === "string" ? event.payload.inquiry_id : event.entity_id;
+      if (leadId) {
+        void notifyFollowUpDue({
+          leadId,
+          inquiryId: inquiryId ?? null,
+          title: "Follow-up reminder is due for this lead.",
+          overdue: false,
+        }).catch(() => {});
+      }
+    }
     return;
   }
   const dead = event.attempt_count >= event.max_attempts ? "dead" : "failed";
   await input.store.complete(event.id, dead, permanent[0]?.last_error ?? "delivery_failed");
+  if (dead === "dead") {
+    const leadId = typeof event.payload.lead_id === "string" ? event.payload.lead_id : event.lead_id;
+    const inquiryId = typeof event.payload.inquiry_id === "string" ? event.payload.inquiry_id : event.entity_id;
+    void notifyWorkerEventFailure({
+      eventId: event.id,
+      eventType: event.event_type,
+      leadId: leadId ?? null,
+      inquiryId: inquiryId ?? null,
+      error: permanent[0]?.last_error ?? "delivery_failed",
+      status: "dead",
+    }).catch(() => {});
+  }
 }

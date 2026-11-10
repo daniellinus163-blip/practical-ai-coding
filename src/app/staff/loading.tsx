@@ -1,3 +1,5 @@
+import { StaffPageSkeleton } from "@/components/staff/staff-loading-skeleton";
+
 export default function StaffLoading() {
-  return <p className="text-sm text-[var(--muted)]">Loading CRM…</p>;
+  return <StaffPageSkeleton />;
 }

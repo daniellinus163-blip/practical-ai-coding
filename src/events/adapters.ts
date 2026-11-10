@@ -272,6 +272,7 @@ function hubspotDealDescription(contact: ContactContext, event: AutomationEvent,
     contact.message ? `Message: ${contact.message.slice(0, 500)}` : null,
     siteUrl && contact.leadId ? `Staff: ${siteUrl.replace(/\/$/, "")}/staff/leads/${contact.leadId}` : null,
     event.payload?.has_config === true ? "Includes 3D configuration snapshot." : null,
+    contact.configurationSummary ? `Configuration:\n${contact.configurationSummary}` : null,
   ].filter(Boolean);
   return parts.join("\n");
 }

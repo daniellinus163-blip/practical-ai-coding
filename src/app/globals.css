@@ -167,6 +167,118 @@ select:focus-visible {
   }
 }
 
+/* Staff CRM — luxury automotive command center (scoped, public site unchanged) */
+.staff-crm {
+  --staff-bg: #e8e4dc;
+  --staff-sidebar: #1a1917;
+  --staff-sidebar-text: #f4efe6;
+  --staff-sidebar-muted: #9c968a;
+  --staff-sidebar-line: rgba(255, 255, 255, 0.08);
+  --staff-sidebar-active: #3b6ea8;
+  background: var(--staff-bg);
+  color: var(--ink);
+}
+
+.staff-crm .staff-app-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--staff-bg);
+  line-height: 1.55;
+}
+
+@media (min-width: 1024px) {
+  .staff-crm .staff-app-grid {
+    grid-template-columns: 16.5rem minmax(0, 1fr);
+  }
+}
+
+.staff-crm .staff-sidebar {
+  background: var(--staff-sidebar);
+  border-color: var(--staff-sidebar-line);
+  min-height: 100dvh;
+}
+
+.staff-crm .staff-app-main {
+  min-height: 100dvh;
+  background: var(--staff-bg);
+}
+
+.staff-crm .staff-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--staff-bg) 92%, var(--card));
+  border-color: var(--line);
+}
+
+.staff-crm .staff-main {
+  max-width: none;
+}
+
+.staff-crm .staff-status-banner {
+  margin-top: 0.5rem;
+}
+
+.staff-crm .staff-nav-link {
+  color: var(--staff-sidebar-muted);
+}
+
+.staff-crm .staff-nav-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--staff-sidebar-text);
+}
+
+.staff-crm .staff-nav-link:focus-visible {
+  outline-color: var(--brass-2);
+  outline-offset: 2px;
+}
+
+.staff-crm .staff-nav-link-active {
+  background: rgba(59, 110, 168, 0.22);
+  color: var(--staff-sidebar-text);
+  box-shadow: inset 3px 0 0 var(--staff-sidebar-active);
+}
+
+.staff-crm .staff-card {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: var(--radius-xl);
+  padding: 1.35rem 1.5rem;
+  box-shadow: 0 1px 0 rgba(23, 21, 18, 0.04);
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .staff-crm .staff-card:hover {
+    box-shadow: 0 12px 40px rgba(23, 21, 18, 0.06);
+    border-color: color-mix(in srgb, var(--brass-2) 35%, var(--line));
+  }
+}
+
+.staff-crm .staff-table-wrap table {
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.staff-crm .staff-table-wrap thead {
+  background: var(--bg-2);
+}
+
+.staff-crm .staff-table-wrap tbody tr {
+  border-top: 1px solid var(--line);
+  transition: background 0.15s ease;
+}
+
+.staff-crm .staff-table-wrap tbody tr:hover {
+  background: color-mix(in srgb, var(--bg-2) 60%, transparent);
+}
+
+.staff-crm .staff-empty {
+  background: var(--card);
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

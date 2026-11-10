@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildConfigurationDetails, formatConfigurationForHubSpot } from "@/crm/configuration-summary";
+import { catalogRepository } from "@/catalog/local-repository";
 import { safeLogMessage } from "@/events/log";
 import { sanitizePayload } from "@/events/payload";
 import type { EventStore } from "@/events/processor";
@@ -145,6 +147,11 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
       .maybeSingle();
     if (data) {
       const message = await loadInquiryMessage(admin, data.inquiry_id ?? inquiryId);
+      const configurationSummary = await loadInquiryConfigurationSummary(
+        admin,
+        data.inquiry_id ?? inquiryId,
+        data.vehicle_slug,
+      );
       return {
         email: data.email ?? null,
         name: data.name ?? null,
@@ -154,6 +161,7 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
         leadStatus: data.status ?? null,
         message,
         staffReplyBody,
+        configurationSummary,
       };
     }
   }
@@ -164,6 +172,7 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
       .eq("id", inquiryId)
       .maybeSingle();
     if (data) {
+      const configurationSummary = await loadInquiryConfigurationSummary(admin, data.id, data.vehicle_slug);
       return {
         email: data.email ?? null,
         name: data.name ?? null,
@@ -173,6 +182,7 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
         leadStatus: "new",
         message: data.message ?? null,
         staffReplyBody,
+        configurationSummary,
       };
     }
   }
@@ -185,7 +195,41 @@ async function loadContact(admin: SupabaseClient, event: AutomationEvent): Promi
     leadStatus: typeof event.payload.to_status === "string" ? event.payload.to_status : null,
     message: null,
     staffReplyBody,
+    configurationSummary: null,
   };
+}
+
+async function loadInquiryConfigurationSummary(
+  admin: SupabaseClient,
+  inquiryId: string | null,
+  vehicleSlug: string | null,
+) {
+  if (!inquiryId) return null;
+  const { data } = await admin
+    .from("inquiries")
+    .select("configuration_snapshot, configuration_id, vehicle_slug")
+    .eq("id", inquiryId)
+    .maybeSingle();
+  if (!data) return null;
+  const slug = vehicleSlug ?? data.vehicle_slug;
+  const vehicle = slug ? await catalogRepository.getVehicleBySlug(slug) : null;
+  let savedName: string | null = null;
+  if (data.configuration_id) {
+    const { data: saved } = await admin
+      .from("saved_configurations")
+      .select("name")
+      .eq("id", data.configuration_id)
+      .maybeSingle();
+    savedName = saved?.name ?? null;
+  }
+  const rows = buildConfigurationDetails({
+    snapshot: data.configuration_snapshot,
+    vehicle,
+    savedConfigurationName: savedName,
+    savedConfigurationId: data.configuration_id,
+    defaultTrimName: vehicle?.configurations.find((c) => c.isDefault)?.name ?? null,
+  });
+  return formatConfigurationForHubSpot(rows);
 }
 
 async function loadInquiryMessage(admin: SupabaseClient, inquiryId: string | null) {

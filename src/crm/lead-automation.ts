@@ -6,11 +6,16 @@ import {
   type TimelineItem,
 } from "@/crm/build-lead-timeline";
 import { hubspotPortalIdFromEnv, sanitizeHubspotRecordId } from "@/crm/hubspot-links";
+import { deriveHubSpotObjectSync, type HubSpotObjectSync } from "@/crm/hubspot-sync-status";
+import type { DeliveryRow as ProcessorDeliveryRow } from "@/events/types";
 
 export type LeadIntegrationView = {
   hubspotContactId: string | null;
   hubspotDealId: string | null;
   hubspotPortalConfigured: boolean;
+  hubspotContactSync: HubSpotObjectSync;
+  hubspotDealSync: HubSpotObjectSync;
+  hubspotInquiryEventId: string | null;
   timeline: TimelineItem[];
   events: AutomationEventRow[];
   deliveries: DeliveryRow[];
@@ -76,7 +81,7 @@ export async function loadLeadIntegrationView(
     const { data } = await admin
       .from("automation_event_deliveries")
       .select(
-        "id, event_id, integration, status, attempt_count, last_error, external_id, completed_at, updated_at",
+        "id, event_id, integration, status, attempt_count, retryable, last_error, external_id, completed_at, updated_at",
       )
       .in("event_id", eventIds)
       .order("updated_at", { ascending: true });
@@ -85,10 +90,31 @@ export async function loadLeadIntegrationView(
 
   const followUp = leadRelated.find((e) => e.event_type === "follow_up.reminder");
 
+  const inquiryEventRow = inquiryEvent.data ?? null;
+  const inquiryHubspotDelivery = inquiryEventRow
+    ? deliveries.find((d) => d.event_id === inquiryEventRow.id && d.integration === "hubspot")
+    : undefined;
+
+  const hubspotContactSync = deriveHubSpotObjectSync({
+    hubspotDelivery: toProcessorDelivery(inquiryHubspotDelivery),
+    event: inquiryEventRow,
+    mappedRecordId: hubspotContactId,
+    recordKind: "contact",
+  });
+  const hubspotDealSync = deriveHubSpotObjectSync({
+    hubspotDelivery: toProcessorDelivery(inquiryHubspotDelivery),
+    event: inquiryEventRow,
+    mappedRecordId: hubspotDealId,
+    recordKind: "deal",
+  });
+
   return {
     hubspotContactId,
     hubspotDealId,
     hubspotPortalConfigured: Boolean(hubspotPortalIdFromEnv()),
+    hubspotContactSync,
+    hubspotDealSync,
+    hubspotInquiryEventId: inquiryEventRow?.id ?? null,
     timeline: buildLeadTimeline({
       inquirySubmittedAt: input.inquirySubmittedAt,
       events,
@@ -106,4 +132,49 @@ export async function loadLeadIntegrationView(
 
 export function formatLeadReference(leadId: string): string {
   return `FSA-${leadId.slice(0, 8).toUpperCase()}`;
+}
+
+export type HubSpotStageSync = {
+  eventId: string | null;
+  eventStatus: string | null;
+  deliveryStatus: string | null;
+  lastError: string | null;
+  canRetry: boolean;
+};
+
+function toProcessorDelivery(row: DeliveryRow | undefined): ProcessorDeliveryRow | null {
+  if (!row) return null;
+  return {
+    event_id: row.event_id,
+    integration: row.integration as ProcessorDeliveryRow["integration"],
+    status: row.status as ProcessorDeliveryRow["status"],
+    attempt_count: row.attempt_count ?? 0,
+    retryable: row.retryable ?? row.status === "failed",
+    last_error: row.last_error,
+    external_id: row.external_id,
+  };
+}
+
+export function hubspotStageSyncStatus(view: LeadIntegrationView): HubSpotStageSync {
+  const stageEvents = view.events
+    .filter((e) => e.event_type === "lead.stage_changed")
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const latest = stageEvents[stageEvents.length - 1];
+  if (!latest) {
+    return { eventId: null, eventStatus: null, deliveryStatus: null, lastError: null, canRetry: false };
+  }
+  const hubspot = view.deliveries.find((d) => d.event_id === latest.id && d.integration === "hubspot");
+  const derived = deriveHubSpotObjectSync({
+    hubspotDelivery: toProcessorDelivery(hubspot),
+    event: latest,
+    mappedRecordId: view.hubspotDealId,
+    recordKind: "deal",
+  });
+  return {
+    eventId: latest.id,
+    eventStatus: latest.status,
+    deliveryStatus: derived.label,
+    lastError: derived.detail,
+    canRetry: derived.canRetry,
+  };
 }

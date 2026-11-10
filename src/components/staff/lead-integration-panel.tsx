@@ -1,11 +1,8 @@
-import {
-  hubspotContactRecordUrl,
-  hubspotDealRecordUrl,
-  hubspotPortalIdFromEnv,
-} from "@/crm/hubspot-links";
 import type { LeadIntegrationView } from "@/crm/lead-automation";
 import { formatLeadReference } from "@/crm/lead-automation";
+import { HUBSPOT_STATE_LABEL } from "@/crm/hubspot-sync-status";
 import { CopyLeadRefButton } from "@/components/staff/copy-lead-ref";
+import { HubSpotSyncRow } from "@/components/staff/hubspot-sync-badge";
 import { LeadAutomationTimeline } from "@/components/staff/lead-automation-timeline";
 
 export function LeadIntegrationPanel({
@@ -21,14 +18,6 @@ export function LeadIntegrationPanel({
   configurationId: string | null;
   integration: LeadIntegrationView;
 }) {
-  const portalId = hubspotPortalIdFromEnv();
-  const contactUrl =
-    portalId && integration.hubspotContactId
-      ? hubspotContactRecordUrl(portalId, integration.hubspotContactId)
-      : null;
-  const dealUrl =
-    portalId && integration.hubspotDealId ? hubspotDealRecordUrl(portalId, integration.hubspotDealId) : null;
-
   const customerEmail = integration.deliveries.find(
     (d) => d.integration === "resend" && d.status !== "pending",
   );
@@ -39,54 +28,41 @@ export function LeadIntegrationPanel({
   return (
     <div className="space-y-6">
       <section className="border border-[var(--line)] bg-[var(--card)] p-4">
-        <h3 className="font-display text-xl">Automation & CRM</h3>
+        <h3 className="font-display text-xl">Automation & HubSpot</h3>
         <p className="mt-1 text-xs text-[var(--muted)]">
           Internal ref {formatLeadReference(leadId)} ·{" "}
           <CopyLeadRefButton value={formatLeadReference(leadId)} />
+          {!integration.hubspotPortalConfigured ? " · Set HUBSPOT_PORTAL_ID for Open in HubSpot links." : null}
         </p>
-        <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+        <dl className="mt-4 grid gap-4 text-sm md:grid-cols-2">
           <div>
             <dt className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">Inquiry id</dt>
             <dd className="font-mono text-xs">{inquiryId ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">Automation event</dt>
-            <dd>{integration.eventSummary.inquiryEventStatus ?? "Not queued"}</dd>
-          </div>
-          <div>
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">HubSpot contact</dt>
+            <dt className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">Inquiry automation</dt>
             <dd>
-              {integration.hubspotContactId ? (
-                contactUrl ? (
-                  <a className="underline" href={contactUrl} rel="noopener noreferrer" target="_blank">
-                    Open in HubSpot ({integration.hubspotContactId})
-                  </a>
-                ) : (
-                  <span>
-                    Synced id {integration.hubspotContactId} — set HUBSPOT_PORTAL_ID for links.
-                  </span>
-                )
-              ) : (
-                "Not synced"
-              )}
+              {integration.eventSummary.inquiryEventStatus
+                ? `${integration.eventSummary.inquiryEventStatus}${
+                    integration.hubspotContactSync.state === "synced" ? "" : ""
+                  }`
+                : "Not queued"}
             </dd>
           </div>
-          <div>
-            <dt className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">HubSpot deal</dt>
-            <dd>
-              {integration.hubspotDealId ? (
-                dealUrl ? (
-                  <a className="underline" href={dealUrl} rel="noopener noreferrer" target="_blank">
-                    Open in HubSpot ({integration.hubspotDealId})
-                  </a>
-                ) : (
-                  <span>Synced id {integration.hubspotDealId} — set HUBSPOT_PORTAL_ID for links.</span>
-                )
-              ) : (
-                "Not synced"
-              )}
-            </dd>
-          </div>
+          <HubSpotSyncRow
+            title="HubSpot contact"
+            sync={integration.hubspotContactSync}
+            recordKind="contact"
+            retryEventId={integration.hubspotInquiryEventId}
+            leadId={leadId}
+          />
+          <HubSpotSyncRow
+            title="HubSpot deal"
+            sync={integration.hubspotDealSync}
+            recordKind="deal"
+            retryEventId={integration.hubspotInquiryEventId}
+            leadId={leadId}
+          />
           <div>
             <dt className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">Customer email</dt>
             <dd>{deliverySummary(customerEmail)}</dd>
@@ -114,6 +90,10 @@ export function LeadIntegrationPanel({
             </div>
           ) : null}
         </dl>
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          HubSpot labels reflect delivery rows in Supabase ({HUBSPOT_STATE_LABEL.synced} only after a succeeded
+          hubspot delivery). Deals are keyed by inquiry id — duplicates within 10 minutes do not create another deal.
+        </p>
       </section>
 
       <section className="space-y-3">

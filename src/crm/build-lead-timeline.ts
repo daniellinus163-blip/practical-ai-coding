@@ -15,6 +15,7 @@ export type DeliveryRow = {
   integration: string;
   status: string;
   attempt_count: number | null;
+  retryable?: boolean | null;
   last_error: string | null;
   external_id: string | null;
   completed_at: string | null;

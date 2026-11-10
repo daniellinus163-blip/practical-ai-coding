@@ -72,9 +72,17 @@ export function InquiryForm({
               </AlertDescription>
             </Alert>
             <div className="flex flex-wrap gap-3">
+              {state.referenceId ? (
+                <Link
+                  href={`/inquiries/confirmation?ref=${encodeURIComponent(state.referenceId)}`}
+                  className={buttonVariants()}
+                >
+                  View confirmation page
+                </Link>
+              ) : null}
               {state.signedIn ? (
-                <Link href="/account/inquiries" className={buttonVariants()}>
-                  View my inquiries
+                <Link href="/account/inquiries" className={buttonVariants({ variant: "outline" })}>
+                  My inquiries
                 </Link>
               ) : (
                 <Link href="/login?next=/account/inquiries" className={buttonVariants({ variant: "outline" })}>

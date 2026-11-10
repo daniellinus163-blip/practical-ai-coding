@@ -7,6 +7,7 @@ import {
   createSupabaseMappings,
   eventFromRow,
 } from "@/events/supabase-store";
+import { processTaskReminders } from "@/crm/task-reminders";
 import { getEmailSiteUrl } from "@/lib/supabase/env";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -42,6 +43,7 @@ export async function runEventWorker(worker = "http-worker"): Promise<WorkerRunO
       console.info("[events]", entry);
     },
   });
+  void processTaskReminders(runtime.admin).catch(() => {});
   return { ...result, error: null };
 }
 

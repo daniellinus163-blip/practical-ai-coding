@@ -22,7 +22,7 @@ export function IntegrationHealthCards({ cards }: { cards: IntegrationCard[] }) 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {cards.map((card) => (
-        <article key={card.key} className="border border-[var(--line)] bg-[var(--card)] p-4">
+        <article key={card.key} className="staff-card">
           <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">{card.title}</p>
           <p className={`mt-1 text-sm font-medium ${STATE_CLASS[card.state]}`}>{STATE_LABEL[card.state]}</p>
           <p className="mt-2 text-sm">{card.summary}</p>

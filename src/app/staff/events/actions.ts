@@ -6,6 +6,7 @@ import { canRetryEvents } from "@/events/auth";
 import { runEventWorker } from "@/events/run";
 import { loadIntegrationConfig } from "@/events/config";
 import { verifyHubspotToken } from "@/crm/hubspot-verify";
+import { staffDisplayError } from "@/events/log";
 import { validEmail } from "@/lib/validation";
 
 type ActionState = { error: string | null; success: string | null };
@@ -90,7 +91,8 @@ export async function sendResendTestAction(_prev: ActionState, formData: FormDat
     });
     const text = await response.text();
     if (!response.ok) {
-      return { error: `Resend HTTP ${response.status}: ${text.slice(0, 200)}`, success: null };
+      const safe = staffDisplayError(`Resend HTTP ${response.status}: ${text}`, 200);
+      return { error: safe ?? "Resend request failed.", success: null };
     }
     return {
       error: null,

@@ -59,4 +59,5 @@ export type ContactContext = {
   leadStatus: string | null;
   message: string | null;
   staffReplyBody: string | null;
+  configurationSummary: string | null;
 };

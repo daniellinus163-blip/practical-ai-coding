@@ -61,6 +61,9 @@ function memoryStore(): EventStore & { deliveries: DeliveryRow[]; completed: Arr
       inquiryId,
       vehicleSlug: "aston-martin-valkyrie",
       leadStatus: "new",
+      message: null,
+      staffReplyBody: null,
+      configurationSummary: null,
     }),
     enqueueDeliveryFailed: async () => undefined,
   };
@@ -217,6 +220,7 @@ test("HubSpot retries reuse mapped ids", async () => {
     leadStatus: "new",
     message: "Interested in allocation timeline.",
     staffReplyBody: null,
+    configurationSummary: null,
   };
   const first = await adapters.deliver("hubspot", baseEvent(), contact);
   map.set("hubspot:deal:inquiry:" + inquiryId, "D1");
@@ -224,6 +228,56 @@ test("HubSpot retries reuse mapped ids", async () => {
   assert.equal(first.status, "succeeded");
   assert.equal(second.status, "succeeded");
   assert.equal(dealCreates, 1);
+});
+
+test("duplicate inquiry sync patches the same deal instead of creating another", async () => {
+  const config = { ...emptyConfig(), hubspotToken: "pat" };
+  const map = new Map<string, string>([
+    ["hubspot:contact:lead:" + leadId, "C1"],
+    ["hubspot:deal:inquiry:" + inquiryId, "D-existing"],
+  ]);
+  let dealCreates = 0;
+  let dealPatches = 0;
+  const adapters = createAdapters({
+    config,
+    mappings: {
+      get: async (provider, object, localType, localId) =>
+        map.get(`${provider}:${object}:${localType}:${localId}`) ?? null,
+      put: async () => {},
+    },
+    internal: { ensureFollowUpTask: async () => "task-1" },
+    fetchImpl: async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+      if (url.includes("/contacts/batch/upsert")) {
+        return new Response(JSON.stringify({ results: [{ id: "C1" }] }), { status: 200 });
+      }
+      if (url.includes("/deals") && method === "POST") {
+        dealCreates += 1;
+        return new Response(JSON.stringify({ id: "D-new" }), { status: 200 });
+      }
+      if (url.includes("/deals/D-existing") && method === "PATCH") {
+        dealPatches += 1;
+        return new Response(JSON.stringify({ id: "D-existing" }), { status: 200 });
+      }
+      return new Response("no", { status: 404 });
+    },
+  });
+  const contact: ContactContext = {
+    email: "buyer@example.com",
+    name: "Buyer",
+    leadId,
+    inquiryId,
+    vehicleSlug: "valkyrie",
+    leadStatus: "new",
+    message: null,
+    staffReplyBody: null,
+    configurationSummary: null,
+  };
+  const result = await adapters.deliver("hubspot", baseEvent(), contact);
+  assert.equal(result.status, "succeeded");
+  assert.equal(dealCreates, 0);
+  assert.equal(dealPatches, 1);
 });
 
 test("HubSpot stage update failure is not treated as success", async () => {
@@ -259,6 +313,9 @@ test("HubSpot stage update failure is not treated as success", async () => {
     inquiryId,
     vehicleSlug: "valkyrie",
     leadStatus: "new",
+    message: null,
+    staffReplyBody: null,
+    configurationSummary: null,
   });
   assert.equal(result.status, "failed");
   assert.equal(result.retryable, false);

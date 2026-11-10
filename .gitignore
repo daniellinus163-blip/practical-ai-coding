@@ -43,3 +43,6 @@ next-env.d.ts
 
 # 3D assets ship from public/models/ (owner-supplied; confirm licence before pushing).
 # Run npm run sync:models after adding files under “3d car models/”.
+
+.vercel
+.env*

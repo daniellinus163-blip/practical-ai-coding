@@ -116,15 +116,25 @@ export function TaskForm({ leadId, staff }: { leadId: string; staff: StaffOption
     <form action={action} className="space-y-2">
       <input type="hidden" name="leadId" value={leadId} />
       <label className="block text-sm">
-        Follow-up
+        Title
         <input name="title" required minLength={2} maxLength={160} className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2" />
       </label>
       <label className="block text-sm">
-        Due date
-        <input name="dueAt" type="date" className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2" />
+        Description
+        <textarea name="description" rows={3} maxLength={2000} className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2 text-sm" placeholder="What to cover on this follow-up" />
       </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block text-sm">
+          Due date
+          <input name="dueDate" type="date" required className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2" />
+        </label>
+        <label className="block text-sm">
+          Due time (UTC)
+          <input name="dueTime" type="time" className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2" />
+        </label>
+      </div>
       <label className="block text-sm">
-        Responsible
+        Assign to
         <select name="assignedTo" className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2">
           {staff.map((member) => (
             <option key={member.user_id} value={member.user_id}>
@@ -135,20 +145,54 @@ export function TaskForm({ leadId, staff }: { leadId: string; staff: StaffOption
       </label>
       <Feedback error={state.error} success={state.success} />
       <button type="submit" disabled={pending} className="border border-[var(--line)] px-3 py-2 text-sm disabled:opacity-60">
-        {pending ? "Saving…" : "Add task"}
+        {pending ? "Saving…" : "Create follow-up"}
       </button>
     </form>
   );
 }
 
-export function CustomerFollowUpForm({ leadId, customerEmail }: { leadId: string; customerEmail: string }) {
-  const [state, action, pending] = useActionState(sendCustomerFollowUpAction, { error: null, success: null });
+export type CustomerReplyFormState = {
+  error: string | null;
+  success: string | null;
+  emailStatus: string | null;
+  inAppNotified: boolean;
+};
+
+function ReplyFeedback({ state }: { state: CustomerReplyFormState }) {
+  if (state.error) return <p className="text-sm text-[var(--danger)]">{state.error}</p>;
+  if (!state.success && !state.emailStatus) return null;
   return (
-    <form action={action} className="space-y-3 border border-[var(--line)] bg-[var(--card)] p-4">
+    <div className="space-y-1 text-sm">
+      {state.success ? <p className="text-[var(--ink)]">{state.success}</p> : null}
+      {state.emailStatus ? <p className="text-xs text-[var(--muted)]">{state.emailStatus}</p> : null}
+      {state.inAppNotified ? <p className="text-xs text-[var(--muted)]">In-app notification saved for signed-in customer.</p> : null}
+    </div>
+  );
+}
+
+export function LeadCustomerReplyForm({
+  leadId,
+  customerEmail,
+  hasAccountHint,
+}: {
+  leadId: string;
+  customerEmail: string;
+  hasAccountHint?: boolean;
+}) {
+  const initial: CustomerReplyFormState = {
+    error: null,
+    success: null,
+    emailStatus: null,
+    inAppNotified: false,
+  };
+  const [state, action, pending] = useActionState(sendCustomerFollowUpAction, initial);
+  return (
+    <form action={action} className="space-y-3 rounded-md border border-[var(--line)] bg-[var(--bg)] p-3">
       <div>
-        <h3 className="font-display text-lg">Reply to customer</h3>
+        <h4 className="font-display text-lg">Reply to customer</h4>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Sends to <span className="font-mono">{customerEmail}</span> and shows in their account when they signed in.
+          Saved to this lead, emailed via Resend to <span className="font-mono">{customerEmail}</span>
+          {hasAccountHint ? ", and shown in their account when they have one." : "."}
         </p>
       </div>
       <input type="hidden" name="leadId" value={leadId} />
@@ -160,18 +204,22 @@ export function CustomerFollowUpForm({ leadId, customerEmail }: { leadId: string
           minLength={10}
           maxLength={4000}
           rows={5}
-          className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2 text-sm"
+          disabled={pending}
+          className="mt-1 w-full border border-[var(--line)] bg-white px-3 py-2 text-sm disabled:opacity-60"
           placeholder="Thank you for your inquiry. Here is what we can offer…"
         />
       </label>
       <label className="flex items-start gap-2 text-sm">
-        <input type="checkbox" name="confirm" value="yes" required className="mt-1" />
-        I confirm this message goes to the customer by email and in-app notification.
+        <input type="checkbox" name="confirm" value="yes" required className="mt-1" disabled={pending} />
+        I confirm this is customer-visible (not an internal note).
       </label>
-      <Feedback error={state.error} success={state.success} />
+      <ReplyFeedback state={state} />
       <button type="submit" disabled={pending} className="on-dark bg-[var(--ink)] px-3 py-2 text-sm disabled:opacity-60">
-        {pending ? "Sending…" : "Send follow-up"}
+        {pending ? "Sending…" : "Send to customer"}
       </button>
     </form>
   );
 }
+
+/** @deprecated use LeadCustomerReplyForm */
+export const CustomerFollowUpForm = LeadCustomerReplyForm;

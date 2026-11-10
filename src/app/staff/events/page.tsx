@@ -1,18 +1,23 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { requireStaff } from "@/crm/guard";
+import { loadIntegrationMonitoring } from "@/crm/integration-monitoring";
 import { canRetryEvents } from "@/events/auth";
-import { loadIntegrationSnapshot } from "@/crm/integration-snapshot";
-import { hubspotPortalIdFromEnv } from "@/crm/hubspot-links";
-import { integrationHealth, loadIntegrationConfig } from "@/events/config";
+import { loadIntegrationConfig } from "@/events/config";
 import { EmptyState } from "@/components/catalog/empty-state";
+import {
+  IntegrationChannelGrid,
+  IntegrationDeliveryLog,
+  IntegrationEventLog,
+  IntegrationHealthSection,
+  IntegrationMonitoringOverview,
+} from "@/components/staff/integration-monitoring";
 import { EventsRetryControls } from "@/components/staff/events-retry-controls";
 import { HubspotVerifyForm } from "@/components/staff/hubspot-verify-form";
-import { IntegrationHealthCards } from "@/components/staff/integration-health-cards";
 import { ResendTestForm } from "@/components/staff/resend-test-form";
-import { StaffShell } from "@/components/staff/staff-shell";
+import { StaffPageHeader } from "@/components/staff/staff-ui";
 
-export const metadata = { title: "Integrations" };
+export const metadata = { title: "Integration monitoring" };
 
 export default function StaffEventsPage() {
   return (
@@ -28,213 +33,105 @@ async function StaffEventsBody() {
   const db = staff.admin;
   if (!db) {
     return (
-      <StaffShell nextPath="/staff/events">
-        <EmptyState title="Integrations locked" body="Set the service role key to inspect event deliveries." />
-      </StaffShell>
+      <EmptyState title="Monitoring locked" body="Set the service role key to read automation events and deliveries." />
     );
   }
 
-  const config = loadIntegrationConfig();
-  const health = integrationHealth(config);
-  const integrationCards = await loadIntegrationSnapshot(db, config, { serviceRolePresent: staff.serviceRole });
-  const testRecipient = process.env.RESEND_TEST_RECIPIENT?.trim() || null;
-  const now = new Date().toISOString();
-  const countStatus = (status: string | string[]) => {
-    const query = db.from("automation_events").select("id", { count: "exact", head: true });
-    return Array.isArray(status) ? query.in("status", status) : query.eq("status", status);
-  };
-  const [
-    { data: failed },
-    { data: recent },
-    { data: recentEvents },
-    { data: lastSuccess },
-    queued,
-    processing,
-    succeeded,
-    failedCount,
-    followUpsDue,
-    followUpsWaiting,
-  ] = await Promise.all([
-    db
-      .from("automation_events")
-      .select("id, event_type, status, attempt_count, last_error, created_at, completed_at")
-      .in("status", ["failed", "dead"])
-      .order("created_at", { ascending: false })
-      .limit(50),
-    db
-      .from("automation_event_deliveries")
-      .select("event_id, integration, status, attempt_count, last_error, completed_at, updated_at")
-      .order("updated_at", { ascending: false })
-      .limit(40),
-    db
-      .from("automation_events")
-      .select("id, event_type, status, attempt_count, next_attempt_at, last_error")
-      .order("created_at", { ascending: false })
-      .limit(20),
-    db
-      .from("automation_events")
-      .select("completed_at")
-      .eq("status", "succeeded")
-      .order("completed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    countStatus("queued"),
-    countStatus("processing"),
-    countStatus("succeeded"),
-    countStatus(["failed", "dead"]),
-    db
-      .from("automation_events")
-      .select("id", { count: "exact", head: true })
-      .eq("event_type", "follow_up.reminder")
-      .in("status", ["queued", "failed"])
-      .lte("next_attempt_at", now),
-    db
-      .from("automation_events")
-      .select("id", { count: "exact", head: true })
-      .eq("event_type", "follow_up.reminder")
-      .in("status", ["queued", "failed"])
-      .gt("next_attempt_at", now),
-  ]);
-
+  const snapshot = await loadIntegrationMonitoring(db);
   const admin = canRetryEvents(staff.role);
+  const config = loadIntegrationConfig();
+  const testRecipient = process.env.RESEND_TEST_RECIPIENT?.trim() || null;
 
   return (
-    <StaffShell nextPath="/staff/events">
-      <div className="space-y-8">
-        <section>
-          <h2 className="font-display text-2xl">Integration health</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Cards use database delivery history and configuration checks — not simulated status lights.
+    <div className="space-y-10">
+        <StaffPageHeader
+          title="Integration monitoring"
+          description="Live health from Supabase automation tables and configuration flags. Secrets are never shown — only whether required settings are present."
+        />
+        <p className="-mt-4 text-xs text-[var(--muted)]">Snapshot: {formatWhen(snapshot.loadedAt)}</p>
+
+        <section className="space-y-3">
+          <h3 className="font-display text-xl">Event worker queue</h3>
+          <IntegrationMonitoringOverview snapshot={snapshot} />
+          <p className="text-sm">
+            Last successful event:{" "}
+            <strong>{snapshot.worker.lastSuccessAt ? formatWhen(snapshot.worker.lastSuccessAt) : "none yet"}</strong>
           </p>
-          <div className="mt-4">
-            <IntegrationHealthCards cards={integrationCards} />
-          </div>
-          <p className="mt-3 text-xs text-[var(--muted)]">
-            HubSpot portal for deep links: {hubspotPortalIdFromEnv() ?? "set HUBSPOT_PORTAL_ID (numeric)"}
-          </p>
-          <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Health label="HubSpot token" ok={health.hubspot} />
-            <Health label="HubSpot stage maps" ok={health.hubspotStagesConfigured > 0} note={`${health.hubspotStagesConfigured} statuses`} />
-            <Health
-              label="Resend sender"
-              ok={health.resend}
-              note={
-                health.resendTestSender
-                  ? "Test sender. Resend delivers onboarding@resend.dev only to the account inbox until a domain is verified."
-                  : undefined
-              }
-            />
-            <Health label="Staff inbox" ok={health.resendInternalConfigured} />
-            <Health label="Worker secret" ok={health.workerAuthConfigured} />
-            <Health label="Resend dry run" ok={!health.dryRun} note={health.dryRun ? "on — no live email" : "off"} />
-          </dl>
-          <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Health label="Queued" ok={(queued.count ?? 0) === 0} note={String(queued.count ?? 0)} />
-            <Health label="Processing" ok={(processing.count ?? 0) === 0} note={String(processing.count ?? 0)} />
-            <Health label="Completed" ok note={String(succeeded.count ?? 0)} />
-            <Health label="Failed" ok={(failedCount.count ?? 0) === 0} note={String(failedCount.count ?? 0)} />
-            <Health label="Follow-ups due" ok={(followUpsDue.count ?? 0) === 0} note={String(followUpsDue.count ?? 0)} />
-            <Health label="Follow-ups waiting" ok note={String(followUpsWaiting.count ?? 0)} />
-          </dl>
-          <p className="mt-3 text-sm">
-            Last successful event: {lastSuccess?.completed_at ? new Date(lastSuccess.completed_at).toUTCString() : "none yet"}
-          </p>
+          {snapshot.worker.lastError ? (
+            <p className="text-sm text-[var(--danger)]">Last worker error: {snapshot.worker.lastError}</p>
+          ) : null}
         </section>
 
+        <section className="space-y-3">
+          <h3 className="font-display text-xl">Channel health</h3>
+          <IntegrationChannelGrid channels={snapshot.channels} />
+          <dl className="grid gap-2 text-xs text-[var(--muted)] sm:grid-cols-2 lg:grid-cols-3">
+            <Flag label="Supabase public" ok={snapshot.configFlags.supabasePublicConfigured} />
+            <Flag label="Service role" ok={snapshot.configFlags.serviceRoleConfigured} />
+            <Flag label="DB reachable" ok={snapshot.configFlags.supabaseReachable} />
+            <Flag label="HubSpot token" ok={snapshot.configFlags.hubspotTokenConfigured} />
+            <Flag label="HubSpot portal id" ok={snapshot.configFlags.hubspotPortalConfigured} />
+            <Flag label="Resend" ok={snapshot.configFlags.resendConfigured} />
+            <Flag label="Staff inbox" ok={snapshot.configFlags.resendInternalConfigured} />
+            <Flag label="Worker auth" ok={snapshot.configFlags.workerAuthConfigured} />
+            <Flag label="Dry run off" ok={!snapshot.configFlags.resendDryRun} />
+          </dl>
+          {snapshot.configFlags.supabaseProbeError ? (
+            <p className="text-sm text-[var(--danger)]">Probe: {snapshot.configFlags.supabaseProbeError}</p>
+          ) : null}
+        </section>
+
+        <IntegrationHealthSection snapshot={snapshot} />
+
         {admin ? (
-          <div className="space-y-4">
+          <section className="staff-card space-y-4">
+            <h3 className="font-display text-xl">Administrator actions</h3>
             <EventsRetryControls />
             <HubspotVerifyForm />
             <ResendTestForm allowedRecipient={testRecipient} />
-          </div>
+            <p className="text-xs text-[var(--muted)]">
+              HubSpot verify uses the server token but does not display it. Resend test only sends to RESEND_TEST_RECIPIENT.
+              Sender: {config.resendFrom ? maskedSender(config.resendFrom) : "not set"}.
+            </p>
+          </section>
         ) : (
-          <p className="text-sm text-[var(--muted)]">Only administrators can retry, verify, or send test email.</p>
+          <p className="text-sm text-[var(--muted)]">Only administrators can retry events or run verification sends.</p>
         )}
 
-        <section>
-          <h2 className="font-display text-2xl">Failed events</h2>
-          {failed && failed.length > 0 ? (
-            <div className="mt-3 overflow-x-auto border border-[var(--line)]">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-[var(--bg-2)] text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
-                  <tr>
-                    <th className="px-3 py-2">Type</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Attempts</th>
-                    <th className="px-3 py-2">Error</th>
-                    {admin ? <th className="px-3 py-2">Retry</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {failed.map((row) => (
-                    <tr key={row.id} className="border-t border-[var(--line)]">
-                      <td className="px-3 py-2">{row.event_type}</td>
-                      <td className="px-3 py-2">{row.status}</td>
-                      <td className="px-3 py-2">{row.attempt_count}</td>
-                      <td className="max-w-xs truncate px-3 py-2 text-[var(--muted)]">{row.last_error ?? "—"}</td>
-                      {admin ? (
-                        <td className="px-3 py-2">
-                          <EventsRetryControls eventId={row.id} compact />
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="mt-2 text-sm text-[var(--muted)]">No failed events.</p>
-          )}
-        </section>
+        <IntegrationEventLog
+          failedEvents={snapshot.failedEvents}
+          recentEvents={snapshot.recentEvents}
+          admin={admin}
+        />
 
         <section>
-          <h2 className="font-display text-2xl">Recent events</h2>
-          {recentEvents && recentEvents.length > 0 ? (
-            <ul className="mt-3 space-y-2 text-sm">
-              {recentEvents.map((row) => (
-                <li key={row.id} className="border border-[var(--line)] bg-[var(--card)] px-3 py-2">
-                  {row.event_type} · {row.status} · attempts {row.attempt_count}
-                  {row.next_attempt_at ? ` · next ${row.next_attempt_at}` : ""}
-                  {row.last_error ? ` · ${row.last_error}` : ""}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-[var(--muted)]">No events recorded yet.</p>
-          )}
+          <h3 className="font-display text-xl">Delivery log</h3>
+          <IntegrationDeliveryLog
+            customerDeliveries={snapshot.customerDeliveries}
+            staffDeliveries={snapshot.staffDeliveries}
+            allDeliveries={snapshot.deliveries}
+          />
         </section>
-
-        <section>
-          <h2 className="font-display text-2xl">Recent deliveries</h2>
-          {recent && recent.length > 0 ? (
-            <ul className="mt-3 space-y-2 text-sm">
-              {recent.map((row) => (
-                <li key={`${row.event_id}-${row.integration}`} className="border border-[var(--line)] bg-[var(--card)] px-3 py-2">
-                  {deliveryLabel(row.integration)} · {row.status} · attempts {row.attempt_count}
-                  {row.last_error ? ` · ${row.last_error}` : ""}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-[var(--muted)]">No deliveries recorded yet.</p>
-          )}
-        </section>
-      </div>
-    </StaffShell>
-  );
-}
-
-function deliveryLabel(integration: string) {
-  if (integration === "resend") return "customer email";
-  if (integration === "resend_staff") return "staff email";
-  return integration;
-}
-
-function Health({ label, ok, note }: { label: string; ok: boolean; note?: string }) {
-  return (
-    <div className="border border-[var(--line)] bg-[var(--card)] px-3 py-3">
-      <dt className="text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]">{label}</dt>
-      <dd className="mt-1 text-sm">{note ?? (ok ? "Configured" : "Not configured")}</dd>
     </div>
   );
+}
+
+function Flag({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <div>
+      {label}: <span className={ok ? "text-emerald-800" : "text-amber-800"}>{ok ? "ok" : "missing"}</span>
+    </div>
+  );
+}
+
+function maskedSender(from: string) {
+  const at = from.indexOf("@");
+  if (at < 1) return "[sender]";
+  return `${from.slice(0, 1)}…@${from.slice(at + 1, 3)}…`;
+}
+
+function formatWhen(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return `${date.toISOString().replace("T", " ").slice(0, 19)} UTC`;
 }
