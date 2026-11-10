@@ -1,7 +1,10 @@
+import { connection } from "next/server";
 import { getSupabaseServerConfigStatus } from "@/lib/supabase/server-config-status";
 import { EmptyState } from "@/components/catalog/empty-state";
 
-export function StaffConfigNotice() {
+/** Runtime env check — must not be evaluated from a prerendered static shell. */
+export async function StaffConfigNotice() {
+  await connection();
   const status = getSupabaseServerConfigStatus();
   if (status.crmReady) return null;
 

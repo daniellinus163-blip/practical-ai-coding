@@ -44,6 +44,8 @@ Authentication → URL configuration:
   - `https://YOUR-PRODUCTION-DOMAIN/auth/callback`
   - Add a second line if you use both `www` and bare host (each must match what users type in the browser).
 
+**Staff + social login:** Grant access by `user_id` in `staff_members`, not by sign-in method. The same person using **email**, **GitHub**, and **X** must map to **one** Supabase user (check Authentication → Users → identities). If GitHub/X created a second user, either link identities in Supabase or add that user’s UUID to `staff_members`. OAuth and email both need the same server env on the host you land on (`SUPABASE_SERVICE_ROLE_KEY` on Vercel for production).
+
 **GitHub and X (OAuth):** Authentication → Providers → enable **GitHub** and **X (OAuth 2.0)**. The app calls `signInWithOAuth` with providers `github` and `x` (not the legacy `twitter` OAuth 1.0 provider). In the **X developer portal**, set the callback URL to `https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback` (Project Settings → API → URL). In **GitHub OAuth app**, set Authorization callback URL to the same Supabase `/auth/v1/callback` URL. Set `NEXT_PUBLIC_SITE_URL` on Vercel to the same `https://` origin as Site URL. A 400 on sign-in almost always means a redirect URL mismatch.
 
 Email confirmation: leave **Confirm email** on if you want a confirmation step. Registration then shows “check your email”. Turn it off only if you explicitly want instant sessions on local.

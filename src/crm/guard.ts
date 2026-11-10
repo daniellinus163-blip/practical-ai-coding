@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -14,6 +15,7 @@ export type StaffContext = {
 };
 
 export async function requireStaff(nextPath = "/staff"): Promise<StaffContext> {
+  await connection();
   if (!isSupabaseConfigured()) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(nextPath)}`);

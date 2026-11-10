@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { connection } from "next/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_NEXT_COOKIE, getRequestOrigin } from "@/lib/supabase/auth-redirect";
@@ -14,7 +15,10 @@ export async function GET(request: NextRequest) {
     requestUrl.searchParams.get("error_description") ?? requestUrl.searchParams.get("error");
 
   const nextCookie = request.cookies.get(AUTH_NEXT_COOKIE)?.value;
-  const next = safeNextPath(nextCookie ? decodeURIComponent(nextCookie) : null);
+  const nextFromQuery = requestUrl.searchParams.get("next");
+  const next = safeNextPath(
+    nextCookie ? decodeURIComponent(nextCookie) : nextFromQuery,
+  );
 
   const clearNext = (response: NextResponse) => {
     response.cookies.set(AUTH_NEXT_COOKIE, "", { path: "/", maxAge: 0 });
@@ -42,7 +46,8 @@ export async function GET(request: NextRequest) {
     return clearNext(NextResponse.redirect(login));
   }
 
-  const response = clearNext(NextResponse.redirect(new URL(next, origin)));
+  const destination = new URL(next, origin);
+  let response = clearNext(NextResponse.redirect(destination));
   const supabase = createRouteHandlerSupabaseClient(request, response);
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
@@ -54,6 +59,24 @@ export async function GET(request: NextRequest) {
         : error.message;
     login.searchParams.set("error", hint);
     return clearNext(NextResponse.redirect(login));
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    const login = new URL("/login", origin);
+    login.searchParams.set(
+      "error",
+      "Social sign-in finished but the session cookie was not saved. Try email sign-in or clear site cookies and retry.",
+    );
+    return clearNext(NextResponse.redirect(login));
+  }
+
+  if (next.startsWith("/staff")) {
+    revalidatePath("/staff", "layout");
   }
 
   return response;

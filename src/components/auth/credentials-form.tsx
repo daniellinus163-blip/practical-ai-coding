@@ -5,6 +5,7 @@ import type { Provider } from "@supabase/supabase-js";
 import { useActionState, useState } from "react";
 import { oauthCallbackRedirectUri, setAuthNextCookie } from "@/lib/supabase/auth-redirect";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { safeNextPath } from "@/lib/validation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,9 +49,12 @@ export function CredentialsForm({
     }
 
     const origin = window.location.origin;
-    if (nextPath) {
-      setAuthNextCookie(origin, nextPath);
-    }
+    const nextFromUrl =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("next")
+        : null;
+    const oauthNext = safeNextPath(nextPath ?? nextFromUrl, "/account");
+    setAuthNextCookie(origin, oauthNext);
 
     const options: { redirectTo: string; scopes?: string } = {
       redirectTo: oauthCallbackRedirectUri(origin),

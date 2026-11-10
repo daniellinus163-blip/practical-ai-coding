@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
@@ -15,6 +16,7 @@ export default function StaffRootLayout({ children }: { children: ReactNode }) {
 }
 
 async function StaffChromeLayout({ children }: { children: ReactNode }) {
+  await connection();
   const pathname = (await headers()).get("x-pathname") ?? "/staff";
   return <StaffShell nextPath={pathname}>{children}</StaffShell>;
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { requireStaff } from "@/crm/guard";
 import type { StaffNotificationRow } from "@/crm/staff-notification-types";
 import { StaffConfigNotice } from "@/components/staff/staff-config-notice";
@@ -13,6 +14,7 @@ export async function StaffShell({
   children: React.ReactNode;
   nextPath: string;
 }) {
+  await connection();
   const staff = await requireStaff(nextPath);
   const supabase = await createServerSupabaseClient();
 
@@ -86,7 +88,9 @@ export async function StaffShell({
         </header>
 
         <div id="staff-main" className="staff-main min-h-0 flex-1 overflow-y-auto px-4 py-8 lg:px-10 lg:py-10">
-          {!staff.serviceRole ? <StaffConfigNotice /> : null}
+          {!staff.serviceRole ? (
+            <StaffConfigNotice />
+          ) : null}
           <div className="mx-auto w-full max-w-6xl space-y-12">{children}</div>
         </div>
       </div>

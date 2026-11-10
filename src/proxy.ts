@@ -15,28 +15,29 @@ export async function proxy(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", request.nextUrl.pathname);
-  let response = NextResponse.next({ request: { headers: requestHeaders } });
+  let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
+
   const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        for (const { name, value } of cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => {
           request.cookies.set(name, value);
-        }
+        });
         const headers = new Headers(request.headers);
         headers.set("x-pathname", request.nextUrl.pathname);
-        response = NextResponse.next({ request: { headers } });
-        for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
-        }
+        supabaseResponse = NextResponse.next({ request: { headers } });
+        cookiesToSet.forEach(({ name, value, options }) => {
+          supabaseResponse.cookies.set(name, value, options);
+        });
       },
     },
   });
 
   await supabase.auth.getUser();
-  return response;
+  return supabaseResponse;
 }
 
 export const config = {
