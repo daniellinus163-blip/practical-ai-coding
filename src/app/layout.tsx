@@ -3,8 +3,8 @@ import { Fraunces, Outfit } from "next/font/google";
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_KEYWORDS,
-  getGoogleSiteVerification,
   getMetadataBase,
+  GOOGLE_SITE_VERIFICATION_CODE,
   publicOpenGraph,
   publicTwitter,
   SITE_NAME,
@@ -53,9 +53,6 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
   },
-  verification: {
-    google: getGoogleSiteVerification(),
-  },
 };
 
 export const viewport: Viewport = {
@@ -67,6 +64,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${outfit.variable} ${fraunces.variable} h-full antialiased font-sans`}>
+      <head>
+        <meta name="google-site-verification" content={GOOGLE_SITE_VERIFICATION_CODE} />
+      </head>
       <body className="flex min-h-full flex-col bg-[var(--bg)] text-[var(--ink)]">{children}</body>
     </html>
   );
