@@ -28,6 +28,13 @@ export function SiteFooter() {
           <Link href="/automotive-crm" className="block hover:text-[var(--brass)]">
             Automotive CRM &amp; automation
           </Link>
+          <a
+            href="/sitemap.xml"
+            className="block hover:text-[var(--brass)]"
+            title="XML sitemap for search engines — submit sitemap.xml in Google Search Console, not /"
+          >
+            Sitemap (XML)
+          </a>
         </div>
         <p>
           Submitting an inquiry does not order a vehicle. Manufacturer names remain their owners’
