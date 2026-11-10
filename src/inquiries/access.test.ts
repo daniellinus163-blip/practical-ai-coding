@@ -5,7 +5,7 @@ import test from "node:test";
 const phase4 = readFileSync(new URL("../../supabase/migrations/20261028_formshift_phase4.sql", import.meta.url), "utf8");
 const phase7 = readFileSync(new URL("../../supabase/migrations/20261029_formshift_phase7_events.sql", import.meta.url), "utf8");
 const form = readFileSync(new URL("../components/account/inquiry-form.tsx", import.meta.url), "utf8");
-const action = readFileSync(new URL("../app/inquiries/actions.ts", import.meta.url), "utf8");
+const action = readFileSync(new URL("../app/(marketing)/inquiries/actions.ts", import.meta.url), "utf8");
 
 test("customers can read only their own inquiries", () => {
   assert.match(phase4, /policy inquiries_select_own on public\.inquiries/);
