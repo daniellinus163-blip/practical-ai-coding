@@ -22,6 +22,12 @@ export function SiteFooter() {
           <Link href="/about" className="block hover:text-[var(--brass)]">
             About
           </Link>
+          <Link href="/3d-car-configurator" className="block hover:text-[var(--brass)]">
+            3D car configurator
+          </Link>
+          <Link href="/automotive-crm" className="block hover:text-[var(--brass)]">
+            Automotive CRM &amp; automation
+          </Link>
         </div>
         <p>
           Submitting an inquiry does not order a vehicle. Manufacturer names remain their owners’

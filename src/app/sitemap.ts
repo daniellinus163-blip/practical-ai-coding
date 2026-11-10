@@ -12,6 +12,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${origin}/discover`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${origin}/compare`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${origin}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${origin}/3d-car-configurator`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
+    { url: `${origin}/automotive-crm`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
   ];
 
   const vehiclePages: MetadataRoute.Sitemap = vehicles.map((vehicle) => ({

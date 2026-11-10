@@ -10,9 +10,9 @@ import { queryCatalog, uniqueBodyStyles, uniqueBrands, uniqueStatuses } from "@/
 import { parseCatalogFilters, parseCompareParam } from "@/catalog/url";
 
 export const metadata = {
-  title: "Discover cars — digital vehicle showroom",
+  title: "Discover cars — virtual car showroom & online configurator",
   description:
-    "Browse the FormShift AI catalog: luxury and performance vehicles with honest specs, filters by brand, and links to each online 3D configurator studio.",
+    "Browse the FormShift AI digital vehicle showroom: luxury and performance models, filters by brand, and links to each interactive car configurator and 3D customization studio.",
   alternates: { canonical: "/discover" },
 };
 

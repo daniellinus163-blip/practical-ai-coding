@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { getSiteUrl, isLocalhostUrl } from "@/lib/supabase/env";
+import { PUBLIC_SEO_KEYWORDS } from "@/lib/seo/keywords";
 
 const PRODUCTION_FALLBACK_ORIGIN = "https://practical-ai-coding-zh1z.vercel.app";
 
@@ -39,20 +40,11 @@ export function getGoogleSiteVerification(): string {
 export const SITE_NAME = "FormShift AI";
 
 export const DEFAULT_DESCRIPTION =
-  "FormShift AI is an independent automotive discovery platform with an online 3D car configurator. " +
-  "Explore luxury and performance vehicles, customize colours and trim in an interactive studio, " +
-  "and send configuration-backed inquiries. Not an official manufacturer or dealership.";
+  "FormShift AI combines an online 3D car configurator, virtual vehicle showroom, and automotive sales automation " +
+  "for staff: vehicle inquiry management, lead tracking, pipeline stages, and CRM integrations. " +
+  "Independent catalog — not an official manufacturer or dealership.";
 
-export const DEFAULT_KEYWORDS = [
-  "3D car configurator",
-  "online vehicle configurator",
-  "interactive car customization",
-  "luxury car configurator",
-  "vehicle customization platform",
-  "automotive technology platform",
-  "digital vehicle showroom",
-  "car colour and trim customization",
-];
+export const DEFAULT_KEYWORDS = [...PUBLIC_SEO_KEYWORDS];
 
 /** Shared Open Graph / Twitter defaults for public marketing pages. */
 export function publicOpenGraph(overrides?: {

@@ -9,6 +9,7 @@ import {
   publicTwitter,
   SITE_NAME,
 } from "@/lib/seo/site";
+import { SiteJsonLd } from "@/components/seo/site-json-ld";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${outfit.variable} ${fraunces.variable} h-full antialiased font-sans`}>
       <head>
         <meta name="google-site-verification" content={GOOGLE_SITE_VERIFICATION_CODE} />
+        <SiteJsonLd />
       </head>
       <body className="flex min-h-full flex-col bg-[var(--bg)] text-[var(--ink)]">{children}</body>
     </html>
