@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { getSiteUrl, isLocalhostUrl } from "@/lib/supabase/env";
 import { PUBLIC_SEO_KEYWORDS } from "@/lib/seo/keywords";
 
-const PRODUCTION_FALLBACK_ORIGIN = "https://practical-ai-coding-8re8.vercel.app";
+const PRODUCTION_FALLBACK_ORIGIN = "https://practical-ai-coding-uqjh.vercel.app";
 
 function vercelHttpsOrigin(host: string | undefined) {
   const trimmed = host?.trim().replace(/\/$/, "");

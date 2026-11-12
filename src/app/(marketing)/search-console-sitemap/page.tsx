@@ -33,6 +33,25 @@ export default async function SearchConsoleSitemapHelpPage() {
         </Link>
       </section>
 
+      <section className="space-y-2 rounded-lg border border-amber-600/40 bg-amber-50/80 p-4 text-sm dark:bg-amber-950/20">
+        <p className="font-medium text-[var(--ink)]">“This URL is invalid” in Search Console</p>
+        <ul className="list-disc space-y-2 pl-5 text-[var(--muted)]">
+          <li>
+            <strong className="text-[var(--ink)]">Do not</strong> paste{" "}
+            <span className="font-mono">{origin}/</span> or the full homepage in the sitemap box — that is invalid.
+          </li>
+          <li>
+            The property (top-left) must be the <strong>same host</strong> you use in the browser (e.g. uqjh, 8re8,
+            zh1z). You cannot submit a uqjh sitemap while logged into an 8re8 property.
+          </li>
+          <li>In the sitemap box, type only: <strong className="font-mono">sitemap.xml</strong></li>
+          <li>
+            When adding a new <strong>property</strong>, use URL prefix: <span className="font-mono">{origin}</span>{" "}
+            (no path, no <span className="font-mono">/sitemap.xml</span>).
+          </li>
+        </ul>
+      </section>
+
       <ol className="list-decimal space-y-3 pl-5 text-sm">
         <li>
           Open{" "}
