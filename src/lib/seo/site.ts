@@ -3,15 +3,29 @@ import { headers } from "next/headers";
 import { getSiteUrl, isLocalhostUrl } from "@/lib/supabase/env";
 import { PUBLIC_SEO_KEYWORDS } from "@/lib/seo/keywords";
 
-const PRODUCTION_FALLBACK_ORIGIN = "https://practical-ai-coding-zh1z.vercel.app";
+const PRODUCTION_FALLBACK_ORIGIN = "https://practical-ai-coding-8re8.vercel.app";
+
+function vercelHttpsOrigin(host: string | undefined) {
+  const trimmed = host?.trim().replace(/\/$/, "");
+  if (!trimmed) return undefined;
+  return trimmed.startsWith("http") ? trimmed.replace(/\/$/, "") : `https://${trimmed}`;
+}
 
 /** Configured canonical origin (trailing slash omitted). */
 export function getPublicSiteOrigin() {
   const configured = getSiteUrl().replace(/\/$/, "");
   if (configured && !isLocalhostUrl(configured)) return configured;
+
   if (process.env.NODE_ENV === "production") {
+    const fromVercelProduction = vercelHttpsOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL);
+    if (fromVercelProduction) return fromVercelProduction;
+
+    const fromVercelDeployment = vercelHttpsOrigin(process.env.VERCEL_URL);
+    if (fromVercelDeployment) return fromVercelDeployment;
+
     return PRODUCTION_FALLBACK_ORIGIN;
   }
+
   return configured || "http://localhost:3000";
 }
 
