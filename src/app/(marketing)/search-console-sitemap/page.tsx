@@ -41,8 +41,9 @@ export default async function SearchConsoleSitemapHelpPage() {
             <span className="font-mono">{origin}/</span> or the full homepage in the sitemap box — that is invalid.
           </li>
           <li>
-            The property (top-left) must be the <strong>same host</strong> you use in the browser (e.g. uqjh, 8re8,
-            zh1z). You cannot submit a uqjh sitemap while logged into an 8re8 property.
+            The property (top-left) must be{" "}
+            <strong className="font-mono">https://practical-ai-coding-zh1z.vercel.app</strong> — same host as your live
+            site.
           </li>
           <li>In the sitemap box, type only: <strong className="font-mono">sitemap.xml</strong></li>
           <li>
