@@ -53,7 +53,8 @@ export const metadata: Metadata = {
   openGraph: publicOpenGraph(),
   twitter: publicTwitter(),
   icons: {
-    icon: "/favicon.ico",
+    icon: [{ url: "/icon", type: "image/png", sizes: "48x48" }],
+    apple: [{ url: "/apple-icon", type: "image/png", sizes: "180x180" }],
   },
 };
 

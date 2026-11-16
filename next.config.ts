@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
       // Common Search Console mistake: submitting "/" instead of the XML file.
       { source: "/sitemap.xml/", destination: "/sitemap.xml", permanent: true },
       { source: "/sitemap/", destination: "/sitemap.xml", permanent: true },
+      { source: "/favicon.ico", destination: "/icon", permanent: false },
     ];
   },
   async headers() {
